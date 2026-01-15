@@ -5,7 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MediPanda</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+        // Generate a unique ID for this phone
+        let deviceId = localStorage.getItem("paws_device_id");
+        if (!deviceId) {
+            deviceId = "user_" + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem("paws_device_id", deviceId);
+        }
+        console.log("My User ID:", deviceId);
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
@@ -17,10 +25,13 @@
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
+
         /* Hide scrollbar for IE, Edge and Firefox */
         .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
         }
 
         /* The iOS-style Spring Animation */
@@ -105,7 +116,7 @@
         </div>
 
         <div id="chat-container" class="flex-1 overflow-y-auto space-y-4 no-scrollbar pb-32 scroll-smooth">
-            
+
             <div class="flex items-start w-full">
                 <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-none p-5 shadow-sm max-w-[90%]">
                     <p class="text-slate-600 font-bold leading-relaxed text-sm">
@@ -120,17 +131,18 @@
     <div class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 p-4 pb-8 z-50">
         <div class="max-w-md mx-auto flex gap-3 items-center">
             <div class="flex-1">
-                <input type="text" 
-                       id="user-input" 
-                       placeholder="Ask Dr. Paws..." 
-                       class="w-full bg-slate-100 border-none rounded-full py-3 px-5 font-medium text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all shadow-inner"
-                       onkeypress="if(event.key === 'Enter') sendMessage()">
+                <input type="text" id="user-input" placeholder="Ask Dr. Paws..."
+                    class="w-full bg-slate-100 border-none rounded-full py-3 px-5 font-medium text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all shadow-inner"
+                    onkeypress="if(event.key === 'Enter') sendMessage()">
             </div>
-                
-            <button onclick="sendMessage()" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90 flex-shrink-0 flex items-center justify-center group">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 translate-x-0.5 translate-y-0.5 group-hover:-translate-y-0.5 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+
+            <button onclick="sendMessage()"
+                class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-transform active:scale-90 flex-shrink-0 flex items-center justify-center group">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 translate-x-0.5 translate-y-0.5 group-hover:-translate-y-0.5 group-hover:translate-x-1 transition-transform"
+                    viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
                 </svg>
             </button>
 
@@ -197,13 +209,13 @@
             if (e.target.files.length > 0) {
                 const file = e.target.files[0];
                 const url = URL.createObjectURL(file);
-                
+
                 // 1. Show Preview in the Dynamic Island
                 const video = document.getElementById('camera-stream');
                 video.src = "";
                 video.style.backgroundImage = `url(${url})`;
                 video.style.backgroundSize = "cover";
-                
+
                 // 2. Notify User in Chat
                 addMessage("Scanning this image...", true);
                 document.getElementById('mascot-text').innerText = "Analyzing...";
@@ -211,28 +223,28 @@
                 // 3. Prepare Data to Send to Python
                 const formData = new FormData();
                 formData.append("file", file);
-                formData.append("user_context", "General Health"); // We will make this dynamic later
+                formData.append("user_id", deviceId);
 
                 try {
                     // 4. Send to Backend
-                    const response = await fetch("http://127.0.0.1:8000/analyze", {
+                    const response = await fetch("https://medipanda-ekck.onrender.com/analyze", {
                         method: "POST",
                         body: formData
                     });
-                    
+
                     const data = await response.json();
-                    
+
                     // 5. Show AI Result
                     addMessage(data.reply);
                     document.getElementById('mascot-text').innerText = "Analysis Complete!";
-                    
+
                     // Optional: Change Panda Face based on keywords
                     const lowerReply = data.reply.toLowerCase();
                     const img = document.getElementById('mascot-image');
-                    if(lowerReply.includes("unsafe") || lowerReply.includes("avoid") || lowerReply.includes("warning")) {
-                         img.src = "./assets/panda-sad.svg"; 
+                    if (lowerReply.includes("unsafe") || lowerReply.includes("avoid") || lowerReply.includes("warning")) {
+                        img.src = "./assets/panda-sad.svg";
                     } else {
-                         img.src = "./assets/panda-happy.svg";
+                        img.src = "./assets/panda-happy.svg";
                     }
 
                 } catch (error) {
@@ -242,96 +254,96 @@
 
                 // Optional: Close camera view after 2 seconds
                 setTimeout(() => {
-                     // collapseCamera({ stopPropagation: () => {} }); 
+                    // collapseCamera({ stopPropagation: () => {} }); 
                 }, 2000);
             }
         });
         async function sendMessage() {
-    const inputField = document.getElementById("user-input");
-    const message = inputField.value.trim();
-    
-    if (message === "") return;
+            const inputField = document.getElementById("user-input");
+            const message = inputField.value.trim();
 
-    // 1. Add User Message to UI
-    addMessage(message, true);
-    inputField.value = ""; 
+            if (message === "") return;
 
-    // 2. Change Mascot to "Thinking" mode
-    document.getElementById('mascot-text').innerText = "Let me think...";
-    // If you have the thinking animation, trigger it here
+            // 1. Add User Message to UI
+            addMessage(message, true);
+            inputField.value = "";
 
-    try {
-        // 3. The Connection: Fetch from your local Python server
-        const response = await fetch("http://127.0.0.1:8000/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ user_message: message })
-        });
+            // 2. Change Mascot to "Thinking" mode
+            document.getElementById('mascot-text').innerText = "Let me think...";
+            // If you have the thinking animation, trigger it here
 
-        const data = await response.json();
+            try {
+                // 3. The Connection: Fetch from your local Python server
+                const response = await fetch("https://medipanda-ekck.onrender.com/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ user_message: message })
+                });
 
-        // 4. Show the REAL AI answer
-        addMessage(data.reply);
-        document.getElementById('mascot-text').innerText = "I found something!";
+                const data = await response.json();
 
-    } catch (error) {
-        console.error("Connection Error:", error);
-        addMessage("I can't reach my brain right now! Is the Python server running?");
-    }
-}
+                // 4. Show the REAL AI answer
+                addMessage(data.reply);
+                document.getElementById('mascot-text').innerText = "I found something!";
+
+            } catch (error) {
+                console.error("Connection Error:", error);
+                addMessage("I can't reach my brain right now! Is the Python server running?");
+            }
+        }
 
         // 1. The "Translator" - Converts Gemini's stars to Bold HTML
-function formatAIResponse(text) {
-    // Convert **bold** to <strong>bold</strong>
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // Convert *italic* to <em>italic</em>
-    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
-    // Convert new lines to <br> tags
-    formatted = formatted.replace(/\n/g, '<br>');
-    
-    // Convert bullet points (* Item) to nice lists
-    formatted = formatted.replace(/^\* /gm, '• ');
-    
-    return formatted;
-}
+        function formatAIResponse(text) {
+            // Convert **bold** to <strong>bold</strong>
+            let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-// 2. The Updated Display Function
-function addMessage(text, isUser = false) {
-    const container = document.getElementById('chat-container');
-    const div = document.createElement('div');
+            // Convert *italic* to <em>italic</em>
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
 
-    if (isUser) {
-        // User Message (Blue) - No formatting needed
-        div.className = "flex items-end justify-end w-full mb-4";
-        div.innerHTML = `
+            // Convert new lines to <br> tags
+            formatted = formatted.replace(/\n/g, '<br>');
+
+            // Convert bullet points (* Item) to nice lists
+            formatted = formatted.replace(/^\* /gm, '• ');
+
+            return formatted;
+        }
+
+        // 2. The Updated Display Function
+        function addMessage(text, isUser = false) {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+
+            if (isUser) {
+                // User Message (Blue) - No formatting needed
+                div.className = "flex items-end justify-end w-full mb-4";
+                div.innerHTML = `
             <div class="bg-blue-600 text-white rounded-2xl rounded-tr-none p-4 shadow-md max-w-[85%] fade-enter">
                 <p class="font-bold text-sm leading-relaxed">${text}</p>
             </div>`;
-    } else {
-        // AI Message (White) - RUN THE FORMATTER HERE!
-        const cleanHtml = formatAIResponse(text);
-        
-        div.className = "flex items-start w-full mb-4";
-        div.innerHTML = `
+            } else {
+                // AI Message (White) - RUN THE FORMATTER HERE!
+                const cleanHtml = formatAIResponse(text);
+
+                div.className = "flex items-start w-full mb-4";
+                div.innerHTML = `
             <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-none p-4 shadow-sm max-w-[85%] fade-enter text-slate-700 text-sm leading-relaxed">
                 <div>${cleanHtml}</div> 
             </div>`;
-    }
+            }
 
-    container.appendChild(div);
-    
-    // Trigger animation
-    setTimeout(() => {
-        const bubble = div.querySelector('.fade-enter');
-        if(bubble) bubble.classList.add('fade-enter-active');
-    }, 10);
-    
-    container.scrollTop = container.scrollHeight;
-}
+            container.appendChild(div);
+
+            // Trigger animation
+            setTimeout(() => {
+                const bubble = div.querySelector('.fade-enter');
+                if (bubble) bubble.classList.add('fade-enter-active');
+            }, 10);
+
+            container.scrollTop = container.scrollHeight;
+        }
     </script>
 </body>
 
