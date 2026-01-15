@@ -70,6 +70,9 @@ def get_user_profile(user_id: str):
         return "General Health"
 
 # --- ENDPOINTS ---
+@app.get("/")
+async def root():
+    return {"message": "Dr. Paws Brain is Online! 🐼"}
 
 @app.post("/chat")
 async def chat_endpoint(data: dict):
