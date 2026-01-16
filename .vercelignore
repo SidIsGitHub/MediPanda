@@ -2,3 +2,4 @@ main.py
 requirements.txt
 render.yaml
 *.py
+__pycache__
