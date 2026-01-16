@@ -96,7 +96,7 @@ async def chat_endpoint(data: dict):
     except Exception as e:
         return {"reply": "I'm having a little panda brain freeze! Try again in a minute. 🐼"}
 
-@app.post("/analyze_image") # NOTE: Changed from /analyze to /analyze_image to match your frontend!
+@app.post("/analyze") # NOTE: Changed from /analyze to /analyze_image to match your frontend!
 async def analyze_image(file: UploadFile = File(...), user_id: str = Form("guest")):
     try:
         # 1. FETCH MEMORY
