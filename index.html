@@ -301,7 +301,8 @@
                 // 3. Prepare Data to Send to Python
                 const formData = new FormData();
                 formData.append("file", file);
-                formData.append("user_id", deviceId);
+                // FIX: Hardcode the ID so it never crashes
+                formData.append("user_id", "demo_user_123");
 
                 try {
                     // 4. Send to Backend
