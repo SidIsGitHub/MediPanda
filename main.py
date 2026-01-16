@@ -15,8 +15,8 @@ app = FastAPI()
 # We ONLY read from environment variables. 
 # If testing locally, make sure these are set in your terminal or .env file.
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://kyewbpdltqitjlgdidsr.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5ZXdicGRsdHFpdGpsZ2RpZHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0OTEyOTAsImV4cCI6MjA4NDA2NzI5MH0.IBdI5wc00iHoXt-6mUvf7EUIRIyWTpKabL2rBi47-AU")
 
 # Check if keys exist before crashing
 if not GOOGLE_API_KEY:
