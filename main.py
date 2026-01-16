@@ -11,14 +11,13 @@ app = FastAPI()
 
 # --- 1. CONFIGURATION ---
 
-# PASTE YOUR GOOGLE KEY HERE (Kept yours as requested)
 # --- SECURITY FIX: READ FROM RENDER ---
-import os
-GOOGLE_API_KEY = os.environ.get("AIzaSyAVzvERNitvR2FPe9WUk3kydq9yJrTucnA")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
-# Fallback for local testing only (Do not commit real keys here if possible)
 if not GOOGLE_API_KEY:
-    print("Warning: No Google API Key found in Environment!")
+    print("Error: Key is missing!")
+else:
+    genai.configure(api_key=GOOGLE_API_KEY)
 
 # --- PASTE YOUR SUPABASE KEYS HERE (Get these from Supabase -> Project Settings -> API) ---
 # For the hackathon, you can paste them directly here inside the quotes.
