@@ -53,10 +53,38 @@
             opacity: 1;
             transform: scale(1);
         }
+        /* --- ADD THESE NEW STYLES INSIDE YOUR EXISTING <style> TAG --- */
+
+/* 1. Dark Mode Base */
+body {
+    background-color: #09090b;
+    color: #ffffff; /* White text by default */
+}
+
+/* 2. Apple Music Style Animated Gradients */
+.animated-gradient-1 {
+    background: linear-gradient(135deg, #ff4b1f, #ff9068);
+    background-size: 200% 200%;
+    animation: gradientMove 6s ease infinite;
+}
+.animated-gradient-2 {
+    background: linear-gradient(135deg, #8E2DE2, #4A00E0);
+    background-size: 200% 200%;
+    animation: gradientMove 8s ease infinite;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 3. Utility to hide scrollbars for a cleaner look */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-
-<body class="bg-slate-50 h-[100dvh] w-screen overflow-hidden flex flex-col relative">
+<body class="h-[100dvh] flex flex-col overflow-hidden bg-[#121212]">
     <button onclick="toggleProfile(true)"
         class="absolute top-6 right-6 z-50 w-14 h-14 bg-white rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-transform border border-slate-100">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-700" fill="none" viewBox="0 0 24 24"
@@ -126,44 +154,29 @@
 
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
+    <div id="home-screen" class="flex-1 flex flex-col p-6 space-y-6 overflow-y-auto no-scrollbar pb-32">
+        <h1 class="text-3xl font-extrabold mt-20 tracking-tight">Good Evening,<br><span class="text-zinc-400">Siddhant</span></h1>
+         <div class="grid grid-cols-2 gap-4 h-56">
+             <div class="animated-gradient-1 rounded-3xl p-5 flex flex-col justify-between shadow-lg relative overflow-hidden">
+                 <i class="fa-solid fa-bolt absolute top-5 right-5 text-2xl opacity-70"></i>
+                 <div></div> <h2 class="text-2xl font-bold relative z-10 leading-tight">Quick<br>Actions</h2>
+             </div>
+             <div class="animated-gradient-2 rounded-3xl p-5 flex flex-col justify-between shadow-lg relative overflow-hidden">
+                  <i class="fa-solid fa-heart-pulse absolute top-5 right-5 text-2xl opacity-70"></i>
+                  <div></div> <h2 class="text-2xl font-bold relative z-10 leading-tight">Your<br>Health</h2>
+             </div>
+         </div>
 
-    <div class="flex-1 flex flex-col w-full pt-24 pb-0 px-4 relative z-10 overflow-hidden">
-
-        <div class="flex items-center justify-between mb-4 px-2 shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-14 h-14 flex items-center justify-center filter drop-shadow-sm">
-                    <img id="mascot-image" src="/assets/panda-head.svg"
-                        class="w-full h-full object-contain hover:scale-110 transition-transform cursor-pointer"
-                        onclick="setMascotState('happy')">
-                </div>
-                <div>
-                    <h1 class="font-extrabold text-2xl text-slate-800 tracking-tight">Dr. Paws</h1>
-                    <div class="flex items-center">
-                        <span class="w-2 h-2 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>
-                        <span id="mascot-text" class="text-xs font-bold text-green-600 uppercase">Online & Ready</span>
-                    </div>
-                </div>
-                <div class="flex items-center justify-between mb-4 px-2 shrink-0">
-                    <div class="flex items-center gap-3">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="chat-container" class="flex-1 overflow-y-auto space-y-4 no-scrollbar pb-48 scroll-smooth">
-
-            <div class="flex items-start w-full">
-                <div class="bg-white border border-slate-100 rounded-2xl rounded-tl-none p-5 shadow-sm max-w-[90%]">
-                    <p class="text-slate-600 font-bold leading-relaxed text-sm">
-                        Tap the camera button above to start scanning your food.
-                    </p>
-                </div>
-            </div>
-
-        </div>
+         <div class="bg-zinc-900 rounded-3xl p-6 h-48 relative overflow-hidden border border-zinc-800 flex items-center">
+             <div class="max-w-[65%] z-10">
+                 <h3 class="font-bold text-xl mb-2 text-white"><i class="fa-solid fa-paw mr-2"></i>Dr. Paws Tip</h3>
+                 <p class="text-zinc-400 leading-relaxed">"Bamboo is great, but variety is better! Try adding colorful veggies to your next meal."</p>
+             </div>
+             <img src="https://cdn-icons-png.flaticon.com/512/3769/3769036.png" class="absolute -right-6 -bottom-10 w-48 opacity-90 rotate-12 drop-shadow-2xl" alt="Mascot Peeking">
+         </div>
     </div>
-
-    <div class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 p-4 pb-8 z-50">
+    <div id="chat-screen" class="hidden flex-1 flex flex-col bg-zinc-950">
+        <div class=" left-0 w-full bg-white border-t border-slate-100 p-4 pb-8 z-50">
         <div class="max-w-md mx-auto flex gap-3 items-center">
             <div class="flex-1">
                 <input type="text" id="user-input" placeholder="Ask Dr. Paws..."
@@ -183,6 +196,8 @@
 
         </div>
     </div>
+        </div>
+    </div>  
 
     <script>
         const island = document.getElementById('dynamic-island');
@@ -372,6 +387,37 @@
                 addMessage("I can't reach my brain right now! Is the Python server running?");
             }
         }
+        // --- ADD TO YOUR EXISTING SCRIPT TAG ---
+
+function showScreen(screenName) {
+    const homeScreen = document.getElementById('home-screen');
+    const chatScreen = document.getElementById('chat-screen');
+    const navHomeBtn = document.getElementById('nav-home');
+    const navChatBtn = document.getElementById('nav-chat');
+
+    if (screenName === 'home') {
+        // Show Home, Hide Chat
+        homeScreen.classList.remove('hidden');
+        chatScreen.classList.add('hidden');
+        
+        // Update Nav Icons (Home gets highlighted)
+        navHomeBtn.classList.add('text-white');
+        navHomeBtn.classList.remove('text-zinc-500');
+        navChatBtn.classList.add('text-zinc-500');
+        navChatBtn.classList.remove('text-white');
+
+    } else if (screenName === 'chat') {
+        // Hide Home, Show Chat
+        homeScreen.classList.add('hidden');
+        chatScreen.classList.remove('hidden');
+
+        // Update Nav Icons (Chat gets highlighted)
+        navChatBtn.classList.add('text-white');
+        navChatBtn.classList.remove('text-zinc-500');
+        navHomeBtn.classList.add('text-zinc-500');
+        navHomeBtn.classList.remove('text-white');
+    }
+}
 
         // 1. The "Translator" - Converts Gemini's stars to Bold HTML
         function formatAIResponse(text) {
@@ -424,6 +470,7 @@
             container.scrollTop = container.scrollHeight;
         }
     </script>
+    
 </body>
 
 </html>
