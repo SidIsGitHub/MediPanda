@@ -24,7 +24,8 @@ if not GOOGLE_API_KEY:
 else:
     genai.configure(api_key=GOOGLE_API_KEY)
     # Use the stable model version
-    model = genai.GenerativeModel('gemini-1.5-flash') 
+    # Use the alias that worked for your specific account
+model = genai.GenerativeModel('models/gemini-flash-latest') 
 
 # Configure Database
 supabase = None
