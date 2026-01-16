@@ -9,8 +9,8 @@
     <meta http-equiv="Expires" content="0">
     <title>MediPanda</title>
     <script src="https://cdn.tailwindcss.com">
+        const deviceId = "user_" + Math.random().toString(36).substr(2, 9);
         // Generate a unique ID for this phone
-        let deviceId = localStorage.getItem("paws_device_id");
         if (!deviceId) {
             deviceId = "user_" + Math.random().toString(36).substr(2, 9);
             localStorage.setItem("paws_device_id", deviceId);
