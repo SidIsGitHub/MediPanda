@@ -8,6 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>MediPanda</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com">
         const deviceId = "user_" + Math.random().toString(36).substr(2, 9);
         // Generate a unique ID for this phone
@@ -17,9 +18,9 @@
         }
         console.log("My User ID:", deviceId);
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
     <style>
         body {
@@ -101,10 +102,207 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        /* iOS-style Fluid Expansion */
+        .app-transition {
+            transition:
+                top 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                left 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                width 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                border-radius 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity 0.2s ease-out;
+            /* Faster fade for the container itself */
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+            /* Deeper shadow during flight */
+        }
+
+        /* Content Fade Logic - The Secret to Smoothness */
+        .content-hidden {
+            opacity: 0;
+            transform: scale(0.98);
+            /* Slight zoom out effect */
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        .content-visible {
+            opacity: 1;
+            transform: scale(1);
+            /* Delay fade-in until card is mostly open (0.3s delay) */
+            transition: opacity 0.4s ease-out 0.3s, transform 0.4s ease-out 0.3s;
+        }
     </style>
 </head>
 
 <body class="h-[100dvh] flex flex-col overflow-hidden bg-[#121212]">
+    <div id="auth-screen"
+        class="fixed inset-0 z-[100] bg-black flex flex-col justify-center items-center p-6 transition-all duration-500">
+        <div class="w-full max-w-sm h-full max-h-[90vh] flex flex-col">
+            <div class="text-center mb-6 flex-shrink-0">
+                <h1 class="text-4xl font-extrabold text-white tracking-tight mb-2">MediPanda</h1>
+                <p class="text-zinc-400">Your Personal AI Health Companion</p>
+            </div>
+
+            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden flex-1">
+
+                <div class="flex bg-zinc-800 p-1 m-4 rounded-xl flex-shrink-0">
+                    <button onclick="toggleAuthMode('login')" id="tab-login"
+                        class="flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all">Log
+                        In</button>
+                    <button onclick="toggleAuthMode('register')" id="tab-register"
+                        class="flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all">Sign
+                        Up</button>
+                </div>
+
+                <div id="auth-scroll-area" class="overflow-y-auto px-6 pb-6 space-y-4 no-scrollbar flex-1">
+
+                    <div id="register-avatar" class="hidden flex-col items-center justify-center mb-4">
+                        <div class="relative group cursor-pointer"
+                            onclick="document.getElementById('reg-photo-input').click()">
+                            <div id="reg-photo-preview"
+                                class="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden flex items-center justify-center object-cover">
+                                <i class="fa-solid fa-camera text-2xl text-zinc-500"></i>
+                            </div>
+                            <div
+                                class="absolute bottom-0 right-0 bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center border-2 border-black">
+                                <i class="fa-solid fa-plus text-white text-xs"></i>
+                            </div>
+                        </div>
+                        <p class="text-zinc-500 text-xs mt-2">Tap to upload photo</p>
+                        <input type="file" id="reg-photo-input" accept="image/*" class="hidden"
+                            onchange="previewRegPhoto(this)">
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Email</label>
+                            <input type="email" id="auth-email"
+                                class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500 transition"
+                                placeholder="name@example.com">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Password</label>
+                            <input type="password" id="auth-password"
+                                class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500 transition"
+                                placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div id="register-fields" class="hidden space-y-4 pt-2 border-t border-zinc-800 mt-4">
+                        <h3 class="text-white font-bold text-sm">Medical Profile</h3>
+
+                        <div class="flex gap-3">
+                            <div class="flex-1">
+                                <label class="text-xs font-bold text-zinc-500 uppercase ml-2">First Name</label>
+                                <input type="text" id="reg-firstname"
+                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500"
+                                    placeholder="Siddhant">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Last Name</label>
+                                <input type="text" id="reg-lastname"
+                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500"
+                                    placeholder="Bansod">
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <div class="flex-1">
+                                <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Age</label>
+                                <input type="number" id="reg-age"
+                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500"
+                                    placeholder="25">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Blood</label>
+                                <select id="reg-blood"
+                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none appearance-none focus:border-blue-500">
+                                    <option value="Unknown">--</option>
+                                    <option value="A+">A+</option>
+                                    <option value="O+">O+</option>
+                                    <option value="B+">B+</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Dietary Goal</label>
+                            <div class="relative">
+                                <select id="reg-goal"
+                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none appearance-none focus:border-blue-500">
+                                    <option value="Maintain">Maintain Weight</option>
+                                    <option value="Weight Loss">Weight Loss</option>
+                                    <option value="Aggressive Weight Loss">Aggressive Weight Loss</option>
+                                    <option value="Weight Gain">Weight Gain</option>
+                                    <option value="Aggressive Weight Gain">Aggressive Weight Gain</option>
+                                </select>
+                                <div
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Location</label>
+                            <div class="relative flex items-center">
+                                <input type="text" id="reg-location"
+                                    class="w-full bg-black text-white p-4 pr-12 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500"
+                                    placeholder="Detecting..." readonly>
+
+                                <button onclick="detectUserLocation()"
+                                    class="absolute right-2 top-2 bottom-2 bg-zinc-800 hover:bg-zinc-700 text-blue-500 w-10 rounded-xl flex items-center justify-center transition-colors border border-zinc-600">
+                                    <i class="fa-solid fa-location-crosshairs"></i>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-zinc-500 ml-2 mt-1">*Tap icon to detect automatically</p>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Conditions</label>
+                            <div class="relative"> <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Chronic
+                                    Conditions</label>
+
+                                <div class="w-full bg-black min-h-[60px] p-2 rounded-2xl border border-zinc-700 focus-within:border-blue-500 transition flex flex-wrap gap-2"
+                                    onclick="document.getElementById('condition-search').focus()">
+
+                                    <div id="conditions-container" class="contents"></div>
+
+                                    <input type="text" id="condition-search"
+                                        class="bg-transparent text-white outline-none flex-1 min-w-[120px] p-2 placeholder-zinc-600"
+                                        placeholder="Search (e.g. Asthma)" autocomplete="off">
+                                </div>
+
+                                <div id="suggestions-box"
+                                    class="hidden absolute top-full left-0 w-full bg-zinc-800 border border-zinc-700 rounded-xl mt-2 overflow-hidden shadow-2xl max-h-40 overflow-y-auto z-[101]">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 pb-2">
+                        <button onclick="handleAuth()" id="auth-action-btn"
+                            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+                            Log In
+                        </button>
+                        <button onclick="bypassAuth()"
+                            class="w-full mt-3 py-3 text-zinc-500 text-xs font-bold hover:text-white transition">
+                            Continue as Guest (Demo)
+                        </button>
+                        <p id="auth-error" class="text-red-500 text-xs text-center font-bold mt-2"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="google-places-service" style="display:none;"></div>
     <button onclick="showScreen('profile')"
         class="absolute top-6 right-6 z-50 w-14 h-14 bg-zinc-800 rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-transform border border-zinc-700">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
@@ -127,7 +325,7 @@
                 class="w-full bg-slate-100 border-none rounded-2xl p-4 h-32 text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 placeholder="Ex: Peanut allergy, high blood pressure..."></textarea>
 
-            <button onclick="saveProfile()"
+            <button onclick="saveAndCloseProfile()"
                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl mt-6 shadow-lg active:scale-95 transition-all">
                 Save Profile
             </button>
@@ -185,7 +383,7 @@
                 <div></div>
                 <h2 class="text-2xl font-bold relative z-10 leading-tight">Quick<br>Actions</h2>
             </div>
-            <div onclick="openMapModal()"
+            <div id="care-card" onclick="openMapModal()"
                 class="relative rounded-3xl overflow-hidden shadow-lg border border-zinc-800 bg-zinc-900 h-56 cursor-pointer active:scale-95 transition-transform duration-300 group">
 
                 <div id="static-map-preview"
@@ -196,7 +394,6 @@
 
                 <div class="relative z-20 h-full p-5 flex flex-col justify-between">
                     <div></div>
-
                     <div class="flex flex-col">
                         <h2 class="text-white font-bold text-2xl leading-tight tracking-tight">Care &<br>Connect</h2>
                     </div>
@@ -346,155 +543,589 @@
     </div>
 
     <script>
-        // --- 1. GLOBAL VARIABLES (Must be at the top) ---
-        const island = document.getElementById('dynamic-island');
-        const icon = document.getElementById('camera-icon');
-        const view = document.getElementById('camera-view');
-        let isExpanded = false;
+        // --- 1. CONFIGURATION & SAFETY GLOBALS ---
+        mapboxgl.accessToken = 'pk.eyJ1Ijoic2lkZGhhbnRiYW5zb2QiLCJhIjoiY21raWJ5amo2MHI3cjNlcXhwY2RmZHlhNiJ9.AmRwXlI_MuxXn7x2PR7IAg';
 
-        // Map Variables
         let mapInstance = null;
-        let markersGroup = L.layerGroup(); // Moved to TOP (Fixes the crash)
-        let userLat = 19.0330; // Default: Navi Mumbai
+        let markers = [];
+        let userLat = 19.0330;
         let userLng = 73.0297;
+        let currentUser = null; // Holds the logged-in user (or guest)
 
-        // --- 2. PROFILE & UI FUNCTIONS ---
-        function toggleProfile(show) {
-            const modal = document.getElementById('profile-modal');
-            const content = modal.querySelector('div');
-            if (show) {
-                modal.classList.remove('opacity-0', 'pointer-events-none');
-                content.classList.remove('translate-y-full');
-            } else {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-                content.classList.add('translate-y-full');
+        // --- 2. AUTHENTICATION & REGISTRATION LOGIC ---
+        //localStorage.removeItem('paws_guest_profile'); location.reload();
+        // Global Variables
+        let authMode = 'login';
+        let uploadedPhotoBase64 = null; // To store the image string
+
+        window.addEventListener('load', () => {
+            initPreview();
+            // Check for saved user (Guest or Supabase)
+            const guestData = localStorage.getItem('paws_guest_profile');
+            if (guestData) {
+                currentUser = { isGuest: true, data: JSON.parse(guestData) };
+                // Auto-load profile picture if exists
+                if (currentUser.data.photo) updateProfilePhotoUI(currentUser.data.photo);
+                // Hide auth screen
+                document.getElementById('auth-screen').classList.add('hidden');
+                updateUIWithProfile(currentUser.data);
             }
+        });
+
+        // A. Toggle between Simple Login and Big Register Form
+        function toggleAuthMode(mode) {
+            authMode = mode;
+            const btn = document.getElementById('auth-action-btn');
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const regFields = document.getElementById('register-fields');
+            const regAvatar = document.getElementById('register-avatar');
+
+            if (mode === 'login') {
+                btn.innerText = "Log In";
+                tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all";
+                tabRegister.className = "flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all";
+                regFields.classList.add('hidden');
+                regAvatar.classList.add('hidden');
+            } else {
+                btn.innerText = "Create Profile";
+                tabRegister.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all";
+                tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all";
+                regFields.classList.remove('hidden');
+                regAvatar.classList.remove('hidden'); // Show photo uploader
+                regAvatar.classList.add('flex');
+            }
+        }
+
+        // B. Handle Photo Preview (Converts to Base64)
+        function previewRegPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    uploadedPhotoBase64 = e.target.result; // Save string
+                    const previewDiv = document.getElementById('reg-photo-preview');
+                    previewDiv.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // C. Update Profile Photo Everywhere
+        function updateProfilePhotoUI(base64String) {
+            if (!base64String) return;
+
+            // 1. Home Screen Profile Button
+            const homeBtn = document.querySelector('button[onclick="showScreen(\'profile\')"]');
+            if (homeBtn) {
+                homeBtn.innerHTML = `<img src="${base64String}" class="w-full h-full object-cover rounded-full border border-zinc-600">`;
+            }
+
+            // 2. Profile Screen Large Avatar
+            const profileAvatar = document.querySelector('#profile-screen .w-24.h-24'); // Target the big circle
+            if (profileAvatar) {
+                profileAvatar.innerHTML = `<img src="${base64String}" class="w-full h-full object-cover">`;
+                profileAvatar.classList.remove('bg-zinc-800'); // Remove gray background
+            }
+        }
+
+        // D. Main Handle Auth (Login OR Register)
+        async function handleAuth() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const errorMsg = document.getElementById('auth-error');
+            const btn = document.getElementById('auth-action-btn');
+
+            errorMsg.innerText = "";
+
+            // 1. LOGIN MODE
+            if (authMode === 'login') {
+                if (!email || !password) { errorMsg.innerText = "Please enter email & password."; return; }
+                // For demo, we just simulate login or bypass
+                bypassAuth();
+                return;
+            }
+
+            // 2. REGISTER MODE (The Big Save)
+            if (authMode === 'register') {
+                const fname = document.getElementById('reg-firstname').value.trim();
+                const lname = document.getElementById('reg-lastname').value.trim();
+
+                if (!fname || !lname) {
+                    errorMsg.innerText = "First and Last Name are required.";
+                    return;
+                }
+
+                btn.innerText = "Creating Profile...";
+
+                // Combine Names
+                const fullName = `${fname} ${lname}`;
+
+                const newProfile = {
+                    id: "user_" + Math.random().toString(36).substr(2, 9),
+                    email: email,
+                    full_name: fullName, // Saved as one string for display
+                    first_name: fname,   // Saved separately for logic
+                    last_name: lname,
+                    age: document.getElementById('reg-age').value,
+                    blood_group: document.getElementById('reg-blood').value,
+                    conditions: selectedConditions.join(", "),
+                    // Meds are optional, no check needed
+                    medications: document.getElementById('reg-meds') ? document.getElementById('reg-meds').value : "",
+                    dietary_goal: document.getElementById('reg-goal').value, // Gets value from dropdown
+                    location: document.getElementById('reg-location').value,
+                    photo: uploadedPhotoBase64,
+                    joined_at: new Date()
+                };
+
+                // SAVE DATA (Simulate Database Insert)
+                try {
+                    // A. Save to Local Storage (Guest DB)
+                    localStorage.setItem('paws_guest_profile', JSON.stringify(newProfile));
+
+                    // B. If Supabase was active, we would run: 
+                    // await supabase.from('profiles').insert([newProfile]);
+
+                    // C. Update App State
+                    currentUser = { isGuest: true, data: newProfile };
+                    updateUIWithProfile(newProfile); // Update text fields
+                    updateProfilePhotoUI(newProfile.photo); // Update images
+
+                    // D. Success Transition
+                    setTimeout(() => {
+                        document.getElementById('auth-screen').classList.add('hidden');
+                        alert("Welcome, " + newProfile.full_name + "!");
+                    }, 800);
+
+                } catch (e) {
+                    errorMsg.innerText = "Error saving profile. Try again.";
+                    btn.innerText = "Create Profile";
+                }
+            }
+        }
+
+        // E. Update UI Text Fields (Helper)
+        function updateUIWithProfile(data) {
+            if (data.full_name) {
+                // Home Header
+                const headerName = document.querySelector('h1 span');
+                if (headerName) headerName.innerText = data.full_name.split(' ')[0];
+
+                // Profile Modal Inputs
+                const pName = document.getElementById('p-name');
+                if (pName) pName.value = data.full_name;
+            }
+            if (data.age) document.getElementById('p-age').value = data.age;
+            if (data.blood_group) document.getElementById('p-blood').value = data.blood_group;
+            if (data.conditions) document.getElementById('p-conditions').value = data.conditions;
+            if (data.medications) document.getElementById('p-meds').value = data.medications;
+            if (data.dietary_goal) document.getElementById('p-goal').value = data.dietary_goal;
+            if (data.location) document.getElementById('p-location').value = data.location;
+        }
+
+        // Keep existing bypassAuth for the "Guest" button
+        function bypassAuth() {
+            currentUser = { id: "guest", isGuest: true };
+            document.getElementById('auth-screen').classList.add('hidden');
+
+            // Attempt to load existing data
+            const savedData = localStorage.getItem('paws_guest_profile');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                updateUIWithProfile(data);
+                if (data.photo) updateProfilePhotoUI(data.photo);
+            }
+        }
+        // --- LOCATION DETECTION LOGIC ---
+        async function detectUserLocation() {
+            const locInput = document.getElementById('reg-location');
+            const icon = event.currentTarget.querySelector('i');
+
+            // Visual Feedback
+            locInput.value = "Locating...";
+            icon.className = "fa-solid fa-spinner fa-spin";
+
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser");
+                locInput.value = "";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // Use Mapbox Reverse Geocoding to get City Name
+                const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=place&access_token=${mapboxgl.accessToken}`;
+
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    if (data.features && data.features.length > 0) {
+                        // Found the city!
+                        locInput.value = data.features[0].text;
+                    } else {
+                        // Fallback if Mapbox fails to find city name
+                        locInput.value = `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    locInput.value = "Unknown Location";
+                }
+
+                // Reset Icon
+                icon.className = "fa-solid fa-location-crosshairs";
+
+            }, () => {
+                alert("Unable to retrieve your location. Please type it manually.");
+                locInput.value = "";
+                locInput.readOnly = false; // Let user type if GPS fails
+                icon.className = "fa-solid fa-location-crosshairs";
+            });
+        }
+        // --- MEDICAL CONDITION TAGGING SYSTEM (Fixed) ---
+
+const MASTER_CONDITIONS = [
+    "Type 1 Diabetes", "Type 2 Diabetes", "Hypertension (High BP)", 
+    "Asthma", "Peanut Allergy", "Shellfish Allergy", "Lactose Intolerance",
+    "Gluten Sensitivity", "Celiac Disease", "Epilepsy", 
+    "Migraine", "Thyroid Disorder", "Arthritis", 
+    "Heart Disease", "Kidney Disease", "None"
+];
+
+let selectedConditions = [];
+
+// Re-attach listeners whenever we switch to Register mode
+function attachConditionListeners() {
+    const input = document.getElementById('condition-search');
+    const suggestionBox = document.getElementById('suggestions-box');
+    
+    if (!input || !suggestionBox) return;
+
+    // Clear old listeners to avoid duplicates (clone node trick)
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+    
+    // Attach 'Input' Event
+    newInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        
+        if (query.length < 1) {
+            suggestionBox.classList.add('hidden');
+            return;
+        }
+
+        const matches = MASTER_CONDITIONS.filter(c => 
+            c.toLowerCase().includes(query) && !selectedConditions.includes(c)
+        );
+
+        if (matches.length > 0) {
+            suggestionBox.innerHTML = matches.map(c => `
+                <div onclick="addConditionTag('${c}')" 
+                     class="p-3 hover:bg-zinc-700 text-white cursor-pointer border-b border-zinc-700/50 last:border-0 transition text-sm font-medium">
+                    ${c}
+                </div>
+            `).join('');
+            suggestionBox.classList.remove('hidden');
+        } else {
+            suggestionBox.classList.add('hidden');
+        }
+    });
+
+    // Re-focus helper
+    newInput.addEventListener('blur', () => {
+        // Delay hiding so clicks register
+        setTimeout(() => suggestionBox.classList.add('hidden'), 200);
+    });
+}
+
+// Add Tag
+function addConditionTag(condition) {
+    if (selectedConditions.includes(condition)) return;
+    selectedConditions.push(condition);
+    renderTags();
+    
+    const input = document.getElementById('condition-search');
+    input.value = "";
+    document.getElementById('suggestions-box').classList.add('hidden');
+    input.focus();
+}
+
+// Remove Tag
+function removeConditionTag(condition) {
+    selectedConditions = selectedConditions.filter(c => c !== condition);
+    renderTags();
+}
+
+// Render Blue Chips
+function renderTags() {
+    const container = document.getElementById('conditions-container');
+    container.innerHTML = selectedConditions.map(c => `
+        <div class="bg-blue-600/20 border border-blue-500/50 text-blue-400 px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-medium animate-fade-in">
+            <span>${c}</span>
+            <button onclick="removeConditionTag('${c}')" class="hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+// --- UPDATE TOGGLE FUNCTION ---
+// Update your existing toggleAuthMode function to call attachConditionListeners()
+const originalToggle = toggleAuthMode; // Store old ref if needed, or just overwrite:
+
+function toggleAuthMode(mode) {
+    authMode = mode;
+    const btn = document.getElementById('auth-action-btn');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const regFields = document.getElementById('register-fields');
+    const regAvatar = document.getElementById('register-avatar');
+
+    if (mode === 'login') {
+        btn.innerText = "Log In";
+        tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all";
+        tabRegister.className = "flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all";
+        regFields.classList.add('hidden');
+        regAvatar.classList.add('hidden');
+    } else {
+        btn.innerText = "Create Profile";
+        tabRegister.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all";
+        tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all";
+        regFields.classList.remove('hidden');
+        regAvatar.classList.remove('hidden');
+        regAvatar.classList.add('flex');
+        
+        // CRITICAL: Activate the search box now that it is visible
+        setTimeout(attachConditionListeners, 100); 
+    }
+}
+
+        // --- 3. PREVIEW MAP (Small Static Image) ---
+        function initPreview() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((p) => {
+                    userLat = p.coords.latitude;
+                    userLng = p.coords.longitude;
+                    const staticUrl = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${userLng},${userLat},13,0/600x400?access_token=${mapboxgl.accessToken}`;
+                    const previewDiv = document.getElementById('static-map-preview');
+                    if (previewDiv) {
+                        previewDiv.style.backgroundImage = `url('${staticUrl}')`;
+                        previewDiv.style.backgroundSize = 'cover';
+                        previewDiv.style.opacity = '0.8';
+                    }
+                });
+            }
+        }
+
+        // --- 4. ANIMATIONS (Fixed Visibility Bug) ---
+        function openMapModal() {
+            const card = document.getElementById('care-card');
+            const modal = document.getElementById('map-modal');
+            const content = document.getElementById('modal-content');
+            const rect = card.getBoundingClientRect();
+
+            modal.style.visibility = 'visible'; // CRITICAL FIX
+            modal.style.transition = 'none';
+            modal.style.top = `${rect.top}px`;
+            modal.style.left = `${rect.left}px`;
+            modal.style.width = `${rect.width}px`;
+            modal.style.height = `${rect.height}px`;
+            modal.style.borderRadius = '24px';
+            modal.style.opacity = '1';
+            modal.style.pointerEvents = 'none';
+
+            modal.offsetHeight; // Force Paint
+
+            modal.style.transition = '';
+            requestAnimationFrame(() => {
+                modal.style.top = '0px';
+                modal.style.left = '0px';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.borderRadius = '0px';
+            });
+
+            content.classList.remove('content-hidden');
+            content.classList.add('content-visible');
+
+            setTimeout(() => {
+                modal.style.pointerEvents = 'auto'; // Unlock Interaction
+                initFullMap();
+            }, 500);
+        }
+
+        function closeMapModal() {
+            const card = document.getElementById('care-card');
+            const modal = document.getElementById('map-modal');
+            const content = document.getElementById('modal-content');
+            const rect = card.getBoundingClientRect();
+
+            content.classList.remove('content-visible');
+            content.classList.add('content-hidden');
+
+            modal.style.pointerEvents = 'none';
+            modal.style.top = `${rect.top}px`;
+            modal.style.left = `${rect.left}px`;
+            modal.style.width = `${rect.width}px`;
+            modal.style.height = `${rect.height}px`;
+            modal.style.borderRadius = '24px';
+
+            setTimeout(() => {
+                modal.style.opacity = '0';
+                modal.style.visibility = 'hidden'; // CRITICAL FIX
+            }, 500);
+        }
+
+        // --- 5. MAP BUILDER ---
+        function initFullMap() {
+            if (mapInstance) {
+                mapInstance.resize();
+                return;
+            }
+            setTimeout(() => {
+                mapInstance = new mapboxgl.Map({
+                    container: 'full-map',
+                    style: 'mapbox://styles/mapbox/dark-v11',
+                    center: [userLng, userLat],
+                    zoom: 14,
+                    pitch: 45,
+                    attributionControl: false
+                });
+
+                const el = document.createElement('div');
+                el.className = 'user-marker';
+                el.style.width = '20px';
+                el.style.height = '20px';
+                el.style.backgroundColor = '#3b82f6';
+                el.style.borderRadius = '50%';
+                el.style.border = '3px solid white';
+                el.style.boxShadow = '0 0 20px #3b82f6';
+                new mapboxgl.Marker(el).setLngLat([userLng, userLat]).addTo(mapInstance);
+
+                mapInstance.on('load', () => {
+                    mapInstance.resize();
+                    const layers = mapInstance.getStyle().layers;
+                    const labelLayerId = layers.find(l => l.type === 'symbol' && l.layout['text-field']).id;
+                    mapInstance.addLayer({
+                        'id': 'add-3d-buildings',
+                        'source': 'composite',
+                        'source-layer': 'building',
+                        'filter': ['==', 'extrude', 'true'],
+                        'type': 'fill-extrusion',
+                        'minzoom': 15,
+                        'paint': {
+                            'fill-extrusion-color': '#222',
+                            'fill-extrusion-height': ['get', 'height'],
+                            'fill-extrusion-base': ['get', 'min_height'],
+                            'fill-extrusion-opacity': 0.8
+                        }
+                    }, labelLayerId);
+                });
+            }, 100);
+        }
+
+        // --- 6. SEARCH LOGIC ---
+        async function searchNearby(category) {
+            if (!mapInstance) return;
+            const btn = event.currentTarget;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-white"></i>`;
+
+            if (markers) markers.forEach(m => m.remove());
+            markers = [];
+
+            const searchTerm = category === 'hospital' ? 'hospital, clinic' : category;
+            const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchTerm}.json?proximity=${userLng},${userLat}&types=poi&limit=10&access_token=${mapboxgl.accessToken}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.features && data.features.length > 0) {
+                    const bounds = new mapboxgl.LngLatBounds();
+                    data.features.forEach((place) => {
+                        const el = document.createElement('div');
+                        const colorClass = category === 'hospital' ? 'bg-red-500' : 'bg-blue-500';
+                        el.className = `w-4 h-4 rounded-full border-2 border-white shadow-lg ${colorClass}`;
+                        const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
+                            .setHTML(`<b style="color:black">${place.text}</b><br><span style="color:#555;font-size:10px">${place.properties?.address || ''}</span>`);
+                        const marker = new mapboxgl.Marker(el)
+                            .setLngLat(place.center)
+                            .setPopup(popup)
+                            .addTo(mapInstance);
+                        markers.push(marker);
+                        bounds.extend(place.center);
+                    });
+                    mapInstance.fitBounds(bounds, { padding: 80, maxZoom: 15 });
+                    addMessage(`Found ${data.features.length} ${category}s nearby.`, false);
+                } else {
+                    loadUlweBackups(category);
+                }
+            } catch (error) {
+                loadUlweBackups(category);
+            }
+            btn.innerHTML = originalContent;
+        }
+
+        function loadUlweBackups(category) {
+            if (category !== 'hospital' && category !== 'clinic') { alert("No results found."); return; }
+            const ulweData = [
+                { text: "Feather Touch Hospital", center: [73.0280, 18.9745] },
+                { text: "Galaxy Hospital", center: [73.0295, 18.9780] },
+                { text: "Apollo Clinic", center: [73.0245, 18.9752] },
+                { text: "Millennium Hospital", center: [73.0310, 18.9720] }
+            ];
+            const bounds = new mapboxgl.LngLatBounds();
+            ulweData.forEach(place => {
+                const el = document.createElement('div');
+                el.className = `w-4 h-4 rounded-full border-2 border-white shadow-lg bg-red-500`;
+                const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`<b style="color:black">${place.text}</b><br><span style="color:#555;font-size:10px">Ulwe, Navi Mumbai</span>`);
+                const marker = new mapboxgl.Marker(el).setLngLat(place.center).setPopup(popup).addTo(mapInstance);
+                markers.push(marker);
+                bounds.extend(place.center);
+            });
+            mapInstance.fitBounds(bounds, { padding: 80, maxZoom: 15 });
+            addMessage("Used offline data (Network/API Limit).", false);
+        }
+
+        // --- 7. PROFILE & CHAT (Fixed) ---
+        function updateUIWithProfile(data) {
+            if (data.full_name) {
+                document.getElementById('p-name').value = data.full_name;
+                const headerName = document.querySelector('h1 span');
+                if (headerName) headerName.innerText = data.full_name.split(' ')[0];
+            }
+            document.getElementById('p-age').value = data.age || '';
+            document.getElementById('p-blood').value = data.blood_group || 'Unknown';
+            document.getElementById('p-conditions').value = data.conditions || '';
+            document.getElementById('p-meds').value = data.medications || '';
+            document.getElementById('p-goal').value = data.dietary_goal || '';
+            document.getElementById('p-location').value = data.location || '';
         }
 
         async function saveAndCloseProfile() {
             const btn = event.target;
             btn.innerText = "Saving...";
 
-            let myId = localStorage.getItem("paws_device_id");
-            if (!myId) {
-                myId = "user_" + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem("paws_device_id", myId);
-            }
-
-            const profile = {
-                name: document.getElementById('p-name').value,
+            const updates = {
+                full_name: document.getElementById('p-name').value,
                 age: document.getElementById('p-age').value,
-                blood: document.getElementById('p-blood').value,
-                conditions: document.getElementById('p-conditions').value
+                blood_group: document.getElementById('p-blood').value,
+                conditions: document.getElementById('p-conditions').value,
+                medications: document.getElementById('p-meds').value,
+                dietary_goal: document.getElementById('p-goal').value,
+                location: document.getElementById('p-location').value
             };
 
-            localStorage.setItem('paws_profile', JSON.stringify(profile));
-            if (profile.name) document.querySelector('h1 span').innerText = profile.name;
+            // SAVE TO LOCAL STORAGE (Guest Mode)
+            localStorage.setItem('paws_guest_profile', JSON.stringify(updates));
+            updateUIWithProfile(updates);
 
-            const contextString = `Name: ${profile.name}, Age: ${profile.age}, Blood: ${profile.blood}, Conditions: ${profile.conditions}`;
-
-            try {
-                const response = await fetch("https://medipanda-ekck.onrender.com/save_profile", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        user_id: myId,
-                        medical_context: contextString
-                    })
-                });
-
-                if (!response.ok) throw new Error(`Server Error: ${response.status}`);
-                const data = await response.json();
-                if (data.status === "error") throw new Error(data.message);
-
-                btn.innerText = "Saved";
-                setTimeout(() => { btn.innerText = "Done"; showScreen('home'); }, 500);
-
-            } catch (e) {
-                console.error(e);
-                alert(`Saved to phone, but Cloud failed: ${e.message}`);
-                showScreen('home');
-            }
-        }
-
-        // --- 3. CAMERA ANIMATIONS ---
-        function expandCamera() {
-            if (isExpanded) return;
-            isExpanded = true;
-            island.style.width = "95%";
-            island.style.height = "50vh";
-            island.style.borderRadius = "32px";
-            island.style.cursor = "default";
-            icon.style.opacity = "0";
             setTimeout(() => {
-                view.style.opacity = "1";
-                view.style.pointerEvents = "auto";
-                document.getElementById('camera-input').click();
-            }, 300);
+                btn.innerText = "Done";
+                toggleProfile(false);
+            }, 500);
         }
-
-        function collapseCamera(e) {
-            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-            isExpanded = false;
-            const view = document.getElementById('camera-view');
-            const island = document.getElementById('dynamic-island');
-            const icon = document.getElementById('camera-icon');
-
-            if (view) { view.style.opacity = "0"; view.style.pointerEvents = "none"; }
-            setTimeout(() => {
-                if (island) {
-                    island.style.width = "200px";
-                    island.style.height = "64px";
-                    island.style.borderRadius = "9999px";
-                    island.style.cursor = "pointer";
-                }
-                if (icon) icon.style.opacity = "1";
-            }, 100);
-        }
-
-        // --- 4. CAMERA & CHAT LOGIC ---
-        document.getElementById('camera-input').addEventListener('change', async function (e) {
-            if (e.target.files.length > 0) {
-                const file = e.target.files[0];
-                const url = URL.createObjectURL(file);
-                const video = document.getElementById('camera-stream');
-                if (video) {
-                    video.style.backgroundImage = `url(${url})`;
-                    video.style.backgroundSize = "cover";
-                }
-
-                setTimeout(() => {
-                    collapseCamera();
-                    showScreen('chat');
-                    addMessage("Scanning this image...", true);
-                    const mascotText = document.getElementById('mascot-text');
-                    if (mascotText) mascotText.innerText = "Analyzing...";
-                }, 1000);
-
-                let myId = localStorage.getItem("paws_device_id");
-                if (!myId) {
-                    myId = "user_" + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem("paws_device_id", myId);
-                }
-
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("user_id", myId);
-
-                try {
-                    const response = await fetch("https://medipanda-ekck.onrender.com/analyze", {
-                        method: "POST",
-                        body: formData
-                    });
-                    const data = await response.json();
-                    addMessage(data.reply);
-                    const mascotText = document.getElementById('mascot-text');
-                    if (mascotText) mascotText.innerText = "Analysis Complete!";
-                } catch (error) {
-                    addMessage("I couldn't upload the image. Is the server running?");
-                }
-            }
-        });
 
         async function sendMessage() {
             const inputField = document.getElementById("user-input");
@@ -517,228 +1148,76 @@
                 addMessage(data.reply);
                 if (mascotText) mascotText.innerText = "I found something!";
             } catch (error) {
-                addMessage("I can't reach my brain right now!");
+                addMessage("I can't reach my brain right now! (Server Error)");
             }
         }
 
-        // --- 5. MAP LOGIC (Corrected) ---
-        function initPreview() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((p) => {
-                    userLat = p.coords.latitude;
-                    userLng = p.coords.longitude;
-                    // Update preview text
-                    const locText = document.getElementById('preview-loc-text');
-                    if (locText) locText.innerText = "Near You";
-
-                    const previewMap = L.map('static-map-preview', {
-                        zoomControl: false,
-                        attributionControl: false,
-                        dragging: false,
-                        scrollWheelZoom: false
-                    }).setView([userLat, userLng], 13);
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(previewMap);
-                });
-            }
-        }
-
-        function openMapModal() {
-            const modal = document.getElementById('map-modal');
-            modal.classList.remove('translate-y-[110%]');
-
-            // Initialize Full Map
-            if (!mapInstance) {
-                setTimeout(() => {
-                    mapInstance = L.map('full-map', {
-                        zoomControl: false,
-                        attributionControl: false
-                    }).setView([userLat, userLng], 14);
-
-                    // Add the Marker Layer Group (This works now because we defined it at the top)
-                    markersGroup.addTo(mapInstance);
-
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                        maxZoom: 19,
-                        minZoom: 10
-                    }).addTo(mapInstance);
-
-                    const userIcon = L.divIcon({
-                        className: 'user-marker',
-                        html: '<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-[0_0_20px_rgba(59,130,246,0.8)] animate-pulse"></div>',
-                        iconSize: [16, 16]
-                    });
-                    L.marker([userLat, userLng], { icon: userIcon }).addTo(mapInstance);
-
-                    mapInstance.invalidateSize();
-                }, 300);
-            } else {
-                setTimeout(() => {
-                    mapInstance.invalidateSize();
-                    mapInstance.setView([userLat, userLng], 14);
-                }, 300);
-            }
-        }
-
-        function closeMapModal() {
-            const modal = document.getElementById('map-modal');
-            modal.classList.add('translate-y-[110%]', 'opacity-0');
-            if (mapInstance) {
-                setTimeout(() => { mapInstance.invalidateSize(); }, 500);
-            }
-        }
-
-        // --- ROBUST MAP SEARCH (Live API + Real Ulwe Backup) ---
-function searchNearby(category) {
-    if (category === 'hospital') {
-        const btn = event.currentTarget;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-red-500"></i> Scanning...`;
-
-        markersGroup.clearLayers();
-
-        // 1. Try Live API First
-        const query = `
-            [out:json][timeout:10]; 
-            (
-              nwr["amenity"="hospital"](around:5000,${userLat},${userLng});
-              nwr["amenity"="clinic"](around:5000,${userLat},${userLng});
-            );
-            out center;
-        `;
-        // Using a different, faster mirror server (Kumi Systems) to avoid timeouts
-        const url = `https://overpass.kumi.systems/api/interpreter?data=${encodeURIComponent(query)}`;
-
-        // Timeout Promise (fails if API takes > 3 seconds)
-        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
-
-        Promise.race([fetch(url), timeout])
-            .then(response => {
-                if (!response.ok) throw new Error("Server Error");
-                return response.json();
-            })
-            .then(data => {
-                if (data.elements.length > 0) {
-                    // SUCCESS: Live Data Found
-                    data.elements.forEach(place => {
-                        const lat = place.lat || place.center.lat;
-                        const lng = place.lon || place.center.lon;
-                        const name = place.tags.name || "Medical Center";
-                        const isHospital = place.tags.amenity === 'hospital';
-                        addRedDot(lat, lng, name, isHospital);
-                    });
-                    addMessage(`Found ${data.elements.length} nearby centers.`, false);
-                    zoomToDots();
-                } else {
-                    throw new Error("No Data"); // Trigger backup if empty
-                }
-                btn.innerHTML = originalText;
-            })
-            .catch(err => {
-                // FAILURE: API is down/slow -> Load REAL Ulwe Backups
-                console.warn("API Down, loading Ulwe Backup Data...", err);
-                loadUlweBackups(); 
-                addMessage("Network slow. Showing offline database.", false);
-                btn.innerHTML = originalText;
-            });
-
-    } else {
-        const url = `http://googleusercontent.com/maps.google.com/search?q=${category}/@${userLat},${userLng},14z`;
-        window.open(url, '_blank');
-    }
-}
-
-// --- BACKUP: REAL HOSPITALS IN ULWE (Hardcoded Safety Net) ---
-function loadUlweBackups() {
-    // These are ACTUAL coordinates for hospitals in Ulwe, Navi Mumbai
-    const ulweHospitals = [
-        { name: "Feather Touch Hospital", lat: 18.9745, lng: 73.0280, type: true },
-        { name: "Galaxy Hospital (Sec 19)", lat: 18.9780, lng: 73.0295, type: true },
-        { name: "Apollo Clinic", lat: 18.9752, lng: 73.0245, type: false },
-        { name: "Millennium Hospital", lat: 18.9720, lng: 73.0310, type: true },
-        { name: "Balaji Hospital", lat: 18.9695, lng: 73.0260, type: true }
-    ];
-
-    ulweHospitals.forEach(h => addRedDot(h.lat, h.lng, h.name, h.type));
-    zoomToDots();
-}
-
-// --- HELPER: Draw Dot ---
-function addRedDot(lat, lng, name, isHospital = true) {
-    const dot = L.circleMarker([lat, lng], {
-        radius: isHospital ? 8 : 6,
-        fillColor: isHospital ? '#ef4444' : '#3b82f6',
-        color: '#ffffff',
-        weight: 2, 
-        opacity: 1, 
-        fillOpacity: 1
-    }).bindPopup(`<b style="color:black">${name}</b>`);
-    markersGroup.addLayer(dot);
-}
-
-// --- HELPER: Zoom ---
-function zoomToDots() {
-    if (markersGroup.getLayers().length > 0) {
-        markersGroup.addTo(mapInstance);
-        const group = L.featureGroup(markersGroup.getLayers());
-        mapInstance.flyToBounds(group.getBounds(), { padding: [50, 50], maxZoom: 16 });
-    }
-}
-        // --- 6. NAVIGATION & HELPERS ---
-        window.addEventListener('load', initPreview);
-
-        function showScreen(screenName) {
-            const screens = ['home-screen', 'chat-screen', 'profile-screen'];
-            screens.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
-            const target = document.getElementById(screenName + '-screen');
-            if (target) target.classList.remove('hidden');
-
-            const navBar = document.querySelector('.fixed.bottom-0');
-            const island = document.getElementById('dynamic-island');
-            const profileBtn = document.querySelector('button[onclick="showScreen(\'profile\')"]');
-
-            if (screenName === 'home') {
-                if (navBar) navBar.classList.remove('hidden');
-                if (island) island.classList.remove('hidden');
-                if (profileBtn) profileBtn.classList.remove('hidden');
-            } else {
-                if (island) island.classList.add('hidden');
-                if (profileBtn) profileBtn.classList.add('hidden');
-                if (screenName === 'profile') {
-                    if (navBar) navBar.classList.add('hidden');
-                } else {
-                    if (navBar) navBar.classList.remove('hidden');
-                }
-            }
+        // --- 8. HELPERS (Navigation, Camera, Etc) ---
+        function toggleProfile(show) {
+            const modal = document.getElementById('profile-modal');
+            const content = modal.querySelector('div');
+            if (show) { modal.classList.remove('opacity-0', 'pointer-events-none'); content.classList.remove('translate-y-full'); }
+            else { modal.classList.add('opacity-0', 'pointer-events-none'); content.classList.add('translate-y-full'); }
         }
 
         function formatAIResponse(text) {
-            let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            formatted = formatted.replace(/\n/g, '<br>');
-            formatted = formatted.replace(/^\* /gm, '• ');
-            return formatted;
+            let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>'); formatted = formatted.replace(/\n/g, '<br>'); formatted = formatted.replace(/^\* /gm, '• '); return formatted;
         }
 
         function addMessage(text, isUser = false) {
-            const container = document.getElementById('chat-container');
-            const div = document.createElement('div');
-            if (isUser) {
-                div.className = "flex items-end justify-end w-full mb-4";
-                div.innerHTML = `<div class="bg-blue-600 text-white rounded-2xl rounded-tr-none p-4 shadow-md max-w-[85%] fade-enter"><p class="font-bold text-sm leading-relaxed">${text}</p></div>`;
-            } else {
-                const cleanHtml = formatAIResponse(text);
-                div.className = "flex items-start w-full mb-4";
-                div.innerHTML = `<div class="bg-zinc-800 border border-zinc-700 rounded-2xl rounded-tl-none p-4 shadow-sm max-w-[85%] fade-enter text-gray-200 text-sm leading-relaxed"><div>${cleanHtml}</div></div>`;
-            }
-            container.appendChild(div);
-            setTimeout(() => {
-                const bubble = div.querySelector('.fade-enter');
-                if (bubble) bubble.classList.add('fade-enter-active');
-            }, 10);
-            container.scrollTop = container.scrollHeight;
+            const container = document.getElementById('chat-container'); const div = document.createElement('div');
+            if (isUser) { div.className = "flex items-end justify-end w-full mb-4"; div.innerHTML = `<div class="bg-blue-600 text-white rounded-2xl rounded-tr-none p-4 shadow-md max-w-[85%] fade-enter"><p class="font-bold text-sm leading-relaxed">${text}</p></div>`; }
+            else { const cleanHtml = formatAIResponse(text); div.className = "flex items-start w-full mb-4"; div.innerHTML = `<div class="bg-zinc-800 border border-zinc-700 rounded-2xl rounded-tl-none p-4 shadow-sm max-w-[85%] fade-enter text-gray-200 text-sm leading-relaxed"><div>${cleanHtml}</div></div>`; }
+            container.appendChild(div); setTimeout(() => { const bubble = div.querySelector('.fade-enter'); if (bubble) bubble.classList.add('fade-enter-active'); }, 10); container.scrollTop = container.scrollHeight;
+        }
+
+        function showScreen(screenName) {
+            const screens = ['home-screen', 'chat-screen', 'profile-screen'];
+            screens.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+            const target = document.getElementById(screenName + '-screen'); if (target) target.classList.remove('hidden');
+            const navBar = document.querySelector('.fixed.bottom-0'); const island = document.getElementById('dynamic-island'); const profileBtn = document.querySelector('button[onclick="showScreen(\'profile\')"]');
+            if (screenName === 'home') { if (navBar) navBar.classList.remove('hidden'); if (island) island.classList.remove('hidden'); if (profileBtn) profileBtn.classList.remove('hidden'); }
+            else { if (island) island.classList.add('hidden'); if (profileBtn) profileBtn.classList.add('hidden'); if (screenName === 'profile') { if (navBar) navBar.classList.add('hidden'); } else { if (navBar) navBar.classList.remove('hidden'); } }
+        }
+
+        // Camera Globals
+        const island = document.getElementById('dynamic-island');
+        const icon = document.getElementById('camera-icon');
+        const view = document.getElementById('camera-view');
+        let isExpanded = false;
+
+        function expandCamera() {
+            if (isExpanded) return; isExpanded = true;
+            island.style.width = "95%"; island.style.height = "50vh"; island.style.borderRadius = "32px"; island.style.cursor = "default"; icon.style.opacity = "0";
+            setTimeout(() => { view.style.opacity = "1"; view.style.pointerEvents = "auto"; document.getElementById('camera-input').click(); }, 300);
+        }
+
+        function collapseCamera(e) {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation(); isExpanded = false;
+            if (view) { view.style.opacity = "0"; view.style.pointerEvents = "none"; }
+            setTimeout(() => { if (island) { island.style.width = "200px"; island.style.height = "64px"; island.style.borderRadius = "9999px"; island.style.cursor = "pointer"; } if (icon) icon.style.opacity = "1"; }, 100);
+        }
+
+        // Camera Input Listener
+        const cameraInput = document.getElementById('camera-input');
+        if (cameraInput) {
+            cameraInput.addEventListener('change', async function (e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const url = URL.createObjectURL(file);
+                    const video = document.getElementById('camera-stream');
+                    if (video) { video.style.backgroundImage = `url(${url})`; video.style.backgroundSize = "cover"; }
+                    setTimeout(() => { collapseCamera(); showScreen('chat'); addMessage("Scanning this image...", true); }, 1000);
+
+                    // Demo Upload Logic
+                    const formData = new FormData(); formData.append("file", file); formData.append("user_id", "demo_user");
+                    try {
+                        const response = await fetch("https://medipanda-ekck.onrender.com/analyze", { method: "POST", body: formData });
+                        const data = await response.json();
+                        addMessage(data.reply);
+                    } catch (error) { addMessage("I couldn't upload the image. Is the server running?"); }
+                }
+            });
         }
     </script>
     <button onclick="showScreen('chat')"
@@ -746,56 +1225,54 @@ function zoomToDots() {
         <i class="fa-solid fa-comment-medical text-lg"></i>
         <span>Ask AI</span>
     </button>
-    <div id="map-modal"
-        class="fixed inset-0 z-[80] bg-[#09090b] translate-y-[110%] transition-transform duration-500 cubic-bezier(0.32,0.72,0,1) flex flex-col">
+    <div id="map-modal" class="app-transition opacity-0 pointer-events-none bg-[#09090b]">
 
-        <div
-            class="absolute top-0 left-0 w-full p-6 pt-12 z-[1001] flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-            <h2 class="text-2xl font-bold text-white drop-shadow-md pointer-events-auto">Nearby Services</h2>
-            <button onclick="closeMapModal()"
-                class="bg-black/50 backdrop-blur-md text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/10 pointer-events-auto active:scale-90 transition shadow-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
+        <div id="modal-content" class="w-full h-full relative content-hidden">
 
-        <div id="full-map" class="absolute inset-0 z-0 bg-[#121212]"></div>
-
-        <div class="absolute bottom-8 left-0 w-full px-4 z-[1001] flex justify-center pointer-events-none">
             <div
-                class="bg-zinc-900/90 backdrop-blur-xl border border-white/10 p-3 rounded-3xl shadow-2xl flex gap-3 overflow-x-auto no-scrollbar pointer-events-auto max-w-sm w-full">
-
-                <button onclick="searchNearby('hospital')"
-                    class="flex-1 min-w-[70px] bg-zinc-800/50 hover:bg-zinc-700 text-white py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition active:scale-95 border border-white/5">
-                    <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mb-1">
-                        <i class="fa-solid fa-hospital text-red-500 text-sm"></i>
-                    </div>
-                    <span class="text-[10px] font-bold text-zinc-300">Hospitals</span>
+                class="absolute top-0 left-0 w-full p-6 pt-12 z-[1001] flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                <h2 class="text-2xl font-bold text-white drop-shadow-md pointer-events-auto">Nearby Services</h2>
+                <button onclick="closeMapModal()"
+                    class="bg-black/50 backdrop-blur-md text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/10 pointer-events-auto active:scale-90 transition shadow-lg">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
+            </div>
 
-                <button onclick="searchNearby('cardiologist')"
-                    class="flex-1 min-w-[70px] bg-zinc-800/50 hover:bg-zinc-700 text-white py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition active:scale-95 border border-white/5">
-                    <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mb-1">
-                        <i class="fa-solid fa-heart-pulse text-blue-500 text-sm"></i>
-                    </div>
-                    <span class="text-[10px] font-bold text-zinc-300">Cardio</span>
-                </button>
+            <div id="full-map" class="absolute inset-0 z-0 bg-[#121212]"></div>
 
-                <button onclick="searchNearby('pharmacy')"
-                    class="flex-1 min-w-[70px] bg-zinc-800/50 hover:bg-zinc-700 text-white py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition active:scale-95 border border-white/5">
-                    <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center mb-1">
-                        <i class="fa-solid fa-pills text-green-500 text-sm"></i>
-                    </div>
-                    <span class="text-[10px] font-bold text-zinc-300">Meds</span>
-                </button>
+            <div class="absolute bottom-8 left-0 w-full px-4 z-[1001] flex justify-center pointer-events-none">
+                <div
+                    class="bg-zinc-900/90 backdrop-blur-xl border border-white/10 p-3 rounded-3xl shadow-2xl flex gap-3 overflow-x-auto no-scrollbar pointer-events-auto max-w-sm w-full">
 
-                <button onclick="searchNearby('clinic')"
-                    class="flex-1 min-w-[70px] bg-zinc-800/50 hover:bg-zinc-700 text-white py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition active:scale-95 border border-white/5">
-                    <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center mb-1">
-                        <i class="fa-solid fa-user-doctor text-purple-500 text-sm"></i>
-                    </div>
-                    <span class="text-[10px] font-bold text-zinc-300">Clinic</span>
-                </button>
+                    <button onclick="searchNearby('hospital')"
+                        class="flex-1 min-w-[70px] bg-zinc-800/50 hover:bg-zinc-700 text-white py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition active:scale-95 border border-white/5">
+                        <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mb-1"><i
+                                class="fa-solid fa-hospital text-red-500 text-sm"></i></div>
+                        <span class="text-[10px] font-bold text-zinc-300">Hospitals</span>
+                    </button>
 
+                    <button onclick="searchNearby('cardiologist')"
+                        class="flex-1 min-w-[70px] bg-zinc-800/50 hover:bg-zinc-700 text-white py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition active:scale-95 border border-white/5">
+                        <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mb-1"><i
+                                class="fa-solid fa-heart-pulse text-blue-500 text-sm"></i></div>
+                        <span class="text-[10px] font-bold text-zinc-300">Cardio</span>
+                    </button>
+
+                    <button onclick="searchNearby('pharmacy')"
+                        class="flex-1 min-w-[70px] bg-zinc-800/50 hover:bg-zinc-700 text-white py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition active:scale-95 border border-white/5">
+                        <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center mb-1"><i
+                                class="fa-solid fa-pills text-green-500 text-sm"></i></div>
+                        <span class="text-[10px] font-bold text-zinc-300">Meds</span>
+                    </button>
+
+                    <button onclick="searchNearby('clinic')"
+                        class="flex-1 min-w-[70px] bg-zinc-800/50 hover:bg-zinc-700 text-white py-3 rounded-2xl flex flex-col items-center justify-center gap-1 transition active:scale-95 border border-white/5">
+                        <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center mb-1"><i
+                                class="fa-solid fa-user-doctor text-purple-500 text-sm"></i></div>
+                        <span class="text-[10px] font-bold text-zinc-300">Clinic</span>
+                    </button>
+
+                </div>
             </div>
         </div>
     </div>
