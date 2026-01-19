@@ -20,9 +20,46 @@
     </script>
 
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 
     <style>
+        /* --- NEW AUTH SCREEN STYLES --- */
+
+        /* 1. The Apple-style Mesh Gradient Background */
+        .auth-bg-gradient {
+            background: radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* 2. The Glass Card Effect */
+        .glass-panel {
+            background: rgba(28, 28, 30, 0.65);
+            /* Dark semi-transparent */
+            backdrop-filter: blur(25px);
+            /* Heavy Blur (Apple Style) */
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
         body {
             font-family: "Inter", sans-serif;
         }
@@ -139,109 +176,136 @@
 </head>
 
 <body class="h-[100dvh] flex flex-col overflow-hidden bg-[#121212]">
-    <div id="auth-screen"
-        class="fixed inset-0 z-[100] bg-black flex flex-col justify-center items-center p-6 transition-all duration-500">
-        <div class="w-full max-w-sm h-full max-h-[90vh] flex flex-col">
-            <div class="text-center mb-6 flex-shrink-0">
-                <h1 class="text-4xl font-extrabold text-white tracking-tight mb-2">MediPanda</h1>
-                <p class="text-zinc-400">Your Personal AI Health Companion</p>
+    <div id="auth-screen" class="fixed inset-0 z-[100] bg-[#050505] overflow-y-auto transition-all duration-500">
+
+        <div class="fixed inset-0 auth-bg-gradient z-0 opacity-60 pointer-events-none"></div>
+
+        <img src="assets/panda-paw.svg"
+            class="fixed -bottom-40 -right-40 w-[180vw] max-w-[1000px] opacity-[0.03] rotate-[25deg] z-0 pointer-events-none select-none"
+            alt="Background Decoration">
+
+        <div class="min-h-full w-full flex flex-col items-center justify-center py-12 px-6 relative z-10">
+
+            <div class="text-center mb-8 w-full max-w-sm">
+                <div class="relative mx-auto w-40 h-40 mb-2 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-pink-500 blur-[60px] opacity-20 rounded-full"></div>
+                    <img src="assets/panda-paw.svg"
+                        class="relative w-full h-full drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] object-contain"
+                        alt="MediPanda Logo">
+                </div>
+
+                <h1 class="text-4xl font-extrabold text-white tracking-tight mb-2 drop-shadow-md">MediPanda</h1>
+                <p class="text-pink-200/60 font-medium tracking-wide text-sm">Your Health. Simplified.</p>
             </div>
 
-            <div class="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden flex-1">
+            <div class="w-full max-w-sm glass-panel rounded-[32px] p-1 border border-white/10 shadow-2xl relative">
 
-                <div class="flex bg-zinc-800 p-1 m-4 rounded-xl flex-shrink-0">
+                <div class="flex bg-black/20 p-1 m-4 rounded-2xl backdrop-blur-md">
                     <button onclick="toggleAuthMode('login')" id="tab-login"
-                        class="flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all">Log
+                        class="flex-1 py-3 text-sm font-bold rounded-xl bg-white/10 text-white shadow-sm transition-all border border-white/5">Log
                         In</button>
                     <button onclick="toggleAuthMode('register')" id="tab-register"
-                        class="flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all">Sign
+                        class="flex-1 py-3 text-sm font-bold rounded-xl text-zinc-400 hover:text-white transition-all">Sign
                         Up</button>
                 </div>
 
-                <div id="auth-scroll-area" class="overflow-y-auto px-6 pb-6 space-y-4 no-scrollbar flex-1">
+                <div class="px-6 pb-6 space-y-5">
 
-                    <div id="register-avatar" class="hidden flex-col items-center justify-center mb-4">
-                        <div class="relative group cursor-pointer"
+                    <div id="register-avatar" class="hidden flex-col items-center justify-center mb-2 mt-2">
+                        <div class="relative group cursor-pointer transition-transform active:scale-95"
                             onclick="document.getElementById('reg-photo-input').click()">
                             <div id="reg-photo-preview"
-                                class="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden flex items-center justify-center object-cover">
-                                <i class="fa-solid fa-camera text-2xl text-zinc-500"></i>
+                                class="w-28 h-28 rounded-full bg-black/40 border-2 border-white/10 overflow-hidden flex items-center justify-center object-cover shadow-inner backdrop-blur-sm">
+                                <i
+                                    class="fa-solid fa-camera text-2xl text-white/50 group-hover:text-white transition"></i>
                             </div>
                             <div
-                                class="absolute bottom-0 right-0 bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center border-2 border-black">
+                                class="absolute bottom-1 right-1 bg-blue-500 w-8 h-8 rounded-full flex items-center justify-center border-2 border-[#1c1c1e] shadow-lg">
                                 <i class="fa-solid fa-plus text-white text-xs"></i>
                             </div>
                         </div>
-                        <p class="text-zinc-500 text-xs mt-2">Tap to upload photo</p>
+                        <p class="text-zinc-400 text-xs mt-3 font-medium">Add Profile Photo</p>
                         <input type="file" id="reg-photo-input" accept="image/*" class="hidden"
                             onchange="previewRegPhoto(this)">
                     </div>
 
                     <div class="space-y-4">
-                        <div>
-                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Email</label>
+                        <div class="group">
+                            <label
+                                class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block tracking-wider">Email
+                                Address</label>
                             <input type="email" id="auth-email"
-                                class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500 transition"
-                                placeholder="name@example.com">
+                                class="w-full bg-black/30 text-white p-4 rounded-2xl border border-white/5 outline-none focus:border-blue-500/50 focus:bg-black/50 transition placeholder-zinc-600 backdrop-blur-sm"
+                                placeholder="">
                         </div>
-                        <div>
-                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Password</label>
+                        <div class="group">
+                            <label
+                                class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block tracking-wider">Password</label>
                             <input type="password" id="auth-password"
-                                class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500 transition"
-                                placeholder="••••••••">
+                                class="w-full bg-black/30 text-white p-4 rounded-2xl border border-white/5 outline-none focus:border-blue-500/50 focus:bg-black/50 transition placeholder-zinc-600 backdrop-blur-sm"
+                                placeholder="">
                         </div>
                     </div>
 
-                    <div id="register-fields" class="hidden space-y-4 pt-2 border-t border-zinc-800 mt-4">
-                        <h3 class="text-white font-bold text-sm">Medical Profile</h3>
+                    <div id="register-fields" class="hidden space-y-4 pt-4 border-t border-white/10 mt-2">
 
                         <div class="flex gap-3">
                             <div class="flex-1">
-                                <label class="text-xs font-bold text-zinc-500 uppercase ml-2">First Name</label>
+                                <label class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block">First
+                                    Name</label>
                                 <input type="text" id="reg-firstname"
-                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500"
-                                    placeholder="Siddhant">
+                                    class="w-full bg-black/30 text-white p-4 rounded-2xl border border-white/5 outline-none focus:border-blue-500/50"
+                                    placeholder="">
                             </div>
                             <div class="flex-1">
-                                <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Last Name</label>
+                                <label class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block">Last
+                                    Name</label>
                                 <input type="text" id="reg-lastname"
-                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500"
-                                    placeholder="Bansod">
+                                    class="w-full bg-black/30 text-white p-4 rounded-2xl border border-white/5 outline-none focus:border-blue-500/50"
+                                    placeholder="">
                             </div>
                         </div>
 
                         <div class="flex gap-3">
                             <div class="flex-1">
-                                <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Age</label>
+                                <label class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block">Age</label>
                                 <input type="number" id="reg-age"
-                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500"
-                                    placeholder="25">
+                                    class="w-full bg-black/30 text-white p-4 rounded-2xl border border-white/5 outline-none focus:border-blue-500/50"
+                                    placeholder="">
                             </div>
                             <div class="flex-1">
-                                <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Blood</label>
-                                <select id="reg-blood"
-                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none appearance-none focus:border-blue-500">
-                                    <option value="Unknown">--</option>
-                                    <option value="A+">A+</option>
-                                    <option value="O+">O+</option>
-                                    <option value="B+">B+</option>
-                                    <option value="AB+">AB+</option>
-                                    <option value="A-">A-</option>
-                                    <option value="O-">O-</option>
-                                </select>
+                                <label
+                                    class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block">Blood</label>
+                                <div class="relative">
+                                    <select id="reg-blood"
+                                        class="w-full bg-black/30 text-white p-4 rounded-2xl border border-white/5 outline-none appearance-none focus:border-blue-500/50">
+                                        <option value="Unknown" class="bg-zinc-900">Select</option>
+                                        <option value="A+" class="bg-zinc-900">A+</option>
+                                        <option value="O+" class="bg-zinc-900">O+</option>
+                                        <option value="B+" class="bg-zinc-900">B+</option>
+                                        <option value="AB+" class="bg-zinc-900">AB+</option>
+                                        <option value="A-" class="bg-zinc-900">A-</option>
+                                        <option value="O-" class="bg-zinc-900">O-</option>
+                                    </select>
+                                    <i
+                                        class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-xs text-zinc-500 pointer-events-none"></i>
+                                </div>
                             </div>
                         </div>
 
                         <div>
-                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Dietary Goal</label>
+                            <label class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block">Dietary
+                                Goal</label>
                             <div class="relative">
                                 <select id="reg-goal"
-                                    class="w-full bg-black text-white p-4 rounded-2xl border border-zinc-700 outline-none appearance-none focus:border-blue-500">
-                                    <option value="Maintain">Maintain Weight</option>
-                                    <option value="Weight Loss">Weight Loss</option>
-                                    <option value="Aggressive Weight Loss">Aggressive Weight Loss</option>
-                                    <option value="Weight Gain">Weight Gain</option>
-                                    <option value="Aggressive Weight Gain">Aggressive Weight Gain</option>
+                                    class="w-full bg-black/30 text-white p-4 rounded-2xl border border-white/5 outline-none appearance-none focus:border-blue-500/50">
+                                    <option value="Maintain" class="bg-zinc-900">Maintain Weight</option>
+                                    <option value="Weight Loss" class="bg-zinc-900">Weight Loss</option>
+                                    <option value="Aggressive Weight Loss" class="bg-zinc-900">Aggressive Weight Loss
+                                    </option>
+                                    <option value="Weight Gain" class="bg-zinc-900">Weight Gain</option>
+                                    <option value="Aggressive Weight Gain" class="bg-zinc-900">Aggressive Weight Gain
+                                    </option>
                                 </select>
                                 <div
                                     class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
@@ -251,59 +315,56 @@
                         </div>
 
                         <div>
-                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Location</label>
+                            <label
+                                class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block">Location</label>
                             <div class="relative flex items-center">
                                 <input type="text" id="reg-location"
-                                    class="w-full bg-black text-white p-4 pr-12 rounded-2xl border border-zinc-700 outline-none focus:border-blue-500"
+                                    class="w-full bg-black/30 text-white p-4 pr-12 rounded-2xl border border-white/5 outline-none focus:border-blue-500/50"
                                     placeholder="Detecting..." readonly>
-
                                 <button onclick="detectUserLocation()"
-                                    class="absolute right-2 top-2 bottom-2 bg-zinc-800 hover:bg-zinc-700 text-blue-500 w-10 rounded-xl flex items-center justify-center transition-colors border border-zinc-600">
+                                    class="absolute right-2 top-2 bottom-2 bg-white/10 hover:bg-white/20 text-blue-400 w-10 rounded-xl flex items-center justify-center transition-all border border-white/5 shadow-sm active:scale-90">
                                     <i class="fa-solid fa-location-crosshairs"></i>
                                 </button>
                             </div>
-                            <p class="text-[10px] text-zinc-500 ml-2 mt-1">*Tap icon to detect automatically</p>
                         </div>
 
-                        <div>
-                            <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Conditions</label>
-                            <div class="relative"> <label class="text-xs font-bold text-zinc-500 uppercase ml-2">Chronic
-                                    Conditions</label>
-
-                                <div class="w-full bg-black min-h-[60px] p-2 rounded-2xl border border-zinc-700 focus-within:border-blue-500 transition flex flex-wrap gap-2"
-                                    onclick="document.getElementById('condition-search').focus()">
-
-                                    <div id="conditions-container" class="contents"></div>
-
-                                    <input type="text" id="condition-search"
-                                        class="bg-transparent text-white outline-none flex-1 min-w-[120px] p-2 placeholder-zinc-600"
-                                        placeholder="Search (e.g. Asthma)" autocomplete="off">
-                                </div>
-
-                                <div id="suggestions-box"
-                                    class="hidden absolute top-full left-0 w-full bg-zinc-800 border border-zinc-700 rounded-xl mt-2 overflow-hidden shadow-2xl max-h-40 overflow-y-auto z-[101]">
-                                </div>
+                        <div class="relative">
+                            <label class="text-[10px] font-bold text-zinc-400 uppercase ml-3 mb-1 block">Chronic
+                                Conditions</label>
+                            <div class="w-full bg-black/30 min-h-[60px] p-2 rounded-2xl border border-white/5 focus-within:border-blue-500/50 transition flex flex-wrap gap-2 cursor-text"
+                                onclick="document.getElementById('condition-search').focus()">
+                                <div id="conditions-container" class="contents"></div>
+                                <input type="text" id="condition-search"
+                                    class="bg-transparent text-white outline-none flex-1 min-w-[100px] p-2 placeholder-zinc-600 text-sm"
+                                    placeholder="Search..." autocomplete="off">
+                            </div>
+                            <div id="suggestions-box"
+                                class="hidden absolute top-full left-0 w-full bg-[#1c1c1e] border border-white/10 rounded-xl mt-2 overflow-hidden shadow-2xl max-h-40 overflow-y-auto z-[101]">
                             </div>
                         </div>
                     </div>
 
                     <div class="pt-4 pb-2">
                         <button onclick="handleAuth()" id="auth-action-btn"
-                            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+                            class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-900/20 active:scale-95 transition-all text-lg tracking-wide">
                             Log In
                         </button>
                         <button onclick="bypassAuth()"
-                            class="w-full mt-3 py-3 text-zinc-500 text-xs font-bold hover:text-white transition">
-                            Continue as Guest (Demo)
+                            class="w-full mt-4 py-2 text-zinc-500 text-xs font-bold hover:text-white transition uppercase tracking-widest opacity-60 hover:opacity-100">
+                            Continue as Guest
                         </button>
-                        <p id="auth-error" class="text-red-500 text-xs text-center font-bold mt-2"></p>
+                        <p id="auth-error" class="text-red-400 text-xs text-center font-bold mt-3 h-4"></p>
                     </div>
                 </div>
             </div>
+
+            <div class="h-10 w-full"></div>
         </div>
     </div>
+    </div>
+    </div>
     <div id="google-places-service" style="display:none;"></div>
-    <button onclick="showScreen('profile')"
+    <button onclick="toggleProfile(true)"
         class="absolute top-6 right-6 z-50 w-14 h-14 bg-zinc-800 rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-transform border border-zinc-700">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
@@ -312,26 +373,7 @@
         </svg>
     </button>
 
-    <div id="profile-modal"
-        class="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 flex items-end">
-        <div
-            class="bg-white w-full rounded-t-[32px] p-8 pb-12 translate-y-full transition-transform duration-500 shadow-2xl">
-            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
-            <h2 class="text-2xl font-extrabold text-slate-800 mb-2">My Health Profile</h2>
-            <p class="text-slate-500 text-sm mb-6">Tell Dr. Paws about allergies or conditions (e.g., "I am diabetic").
-            </p>
 
-            <textarea id="medical-input"
-                class="w-full bg-slate-100 border-none rounded-2xl p-4 h-32 text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                placeholder="Ex: Peanut allergy, high blood pressure..."></textarea>
-
-            <button onclick="saveAndCloseProfile()"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl mt-6 shadow-lg active:scale-95 transition-all">
-                Save Profile
-            </button>
-            <button onclick="toggleProfile(false)" class="w-full text-slate-400 font-bold py-4 mt-2">Close</button>
-        </div>
-    </div>
 
     <div id="dynamic-island"
         class="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-black shadow-2xl ios-spring overflow-hidden cursor-pointer group"
@@ -374,8 +416,10 @@
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
     <div id="home-screen" class="flex-1 flex flex-col p-6 space-y-6 overflow-y-auto no-scrollbar pb-32">
-        <h1 class="text-3xl font-extrabold mt-20 tracking-tight">Good Evening,<br><span
-                class="text-zinc-400">Siddhant</span></h1>
+        <h1 class="text-3xl font-extrabold mt-20 tracking-tight">
+            <span id="greeting-text">Good Evening,</span><br>
+            <span id="greeting-name" class="text-zinc-400">Guest</span>
+        </h1>
         <div class="grid grid-cols-2 gap-4 h-56">
             <div
                 class="animated-gradient-1 rounded-3xl p-5 flex flex-col justify-between shadow-lg relative overflow-hidden">
@@ -411,105 +455,151 @@
                 class="absolute -right-6 -bottom-10 w-48 opacity-90 rotate-12 drop-shadow-2xl" alt="Mascot Peeking">
         </div>
     </div>
-    <div id="profile-screen" class="hidden h-full flex flex-col bg-[#000000] overflow-y-auto no-scrollbar pb-40">
+    <div id="profile-modal"
+        class="hidden fixed inset-0 z-[200] bg-black transition-transform duration-300 translate-x-full overflow-y-auto no-scrollbar">
 
-        <div class="p-6 pt-12 flex justify-between items-center sticky top-0 bg-black/80 backdrop-blur-md z-20">
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">Medical ID</h1>
-            <button onclick="saveAndCloseProfile()" class="text-blue-500 font-bold text-lg">Done</button>
-        </div>
+        <div class="min-h-full flex flex-col relative">
 
-        <div class="flex flex-col items-center mt-2 mb-8">
-            <div class="relative group cursor-pointer">
-                <div
-                    class="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 overflow-hidden flex items-center justify-center">
-                    <i class="fa-solid fa-user text-4xl text-zinc-500"></i>
-                </div>
-                <div
-                    class="absolute bottom-0 right-0 bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center border-2 border-black">
-                    <i class="fa-solid fa-camera text-xs text-white"></i>
-                </div>
+            <div
+                class="px-6 pt-12 pb-4 flex justify-between items-center sticky top-0 bg-black/90 backdrop-blur-md z-50 border-b border-white/10">
+                <button onclick="toggleProfile(false)"
+                    class="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center active:scale-90 transition-transform border border-zinc-700">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 18L9 12L15 6"></path>
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-extrabold text-white tracking-tight">Medical ID</h1>
+                <button onclick="saveAndCloseProfile()" class="text-blue-500 font-bold text-lg">Done</button>
             </div>
-            <button class="mt-3 text-blue-500 text-sm font-medium">Edit Photo</button>
-        </div>
 
-        <div class="px-5 space-y-8">
+            <div class="p-6 pb-40 flex flex-col items-center">
 
-            <div>
-                <h3 class="text-zinc-500 text-xs font-bold uppercase ml-4 mb-2">Basic Info</h3>
-                <div class="bg-[#1c1c1e] rounded-xl overflow-hidden">
-                    <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-                        <span class="text-white">Name</span>
-                        <input type="text" id="p-name" placeholder="Your Name"
-                            class="bg-transparent text-right text-zinc-400 placeholder-zinc-600 outline-none w-1/2 focus:text-blue-500">
+                <div class="relative group cursor-pointer mb-8">
+                    <div
+                        class="w-28 h-28 rounded-full bg-zinc-800 border-4 border-[#1c1c1e] overflow-hidden flex items-center justify-center shadow-2xl relative">
+                        <img id="profile-img-display" class="w-full h-full object-cover hidden" src="" />
+                        <i id="profile-icon-display"
+                            class="fa-solid fa-user text-4xl text-zinc-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
                     </div>
-                    <div class="flex border-b border-zinc-800">
-                        <div class="flex-1 flex items-center justify-between p-4 border-r border-zinc-800">
-                            <span class="text-white">Age</span>
-                            <input type="number" id="p-age" placeholder="--"
-                                class="bg-transparent text-right text-zinc-400 outline-none w-12">
+                    <div
+                        class="absolute bottom-1 right-1 bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center border-2 border-black shadow-lg">
+                        <i class="fa-solid fa-camera text-xs text-white"></i>
+                    </div>
+                </div>
+
+                <div class="w-full space-y-6">
+
+                    <div>
+                        <h3 class="text-zinc-500 text-xs font-bold uppercase ml-4 mb-2">Basic Info</h3>
+                        <div class="bg-[#1c1c1e] rounded-2xl overflow-hidden border border-white/5">
+                            <div class="flex items-center justify-between p-4 border-b border-zinc-800">
+                                <span class="text-white font-medium">Name</span>
+                                <input type="text" id="p-name" placeholder="Your Name"
+                                    class="bg-transparent text-right text-zinc-400 outline-none w-1/2 focus:text-blue-500">
+                            </div>
+                            <div class="flex border-b border-zinc-800">
+                                <div class="flex-1 flex items-center justify-between p-4 border-r border-zinc-800">
+                                    <span class="text-white font-medium">Age</span>
+                                    <input type="number" id="p-age" placeholder="--"
+                                        class="bg-transparent text-right text-zinc-400 outline-none w-12 focus:text-blue-500">
+                                </div>
+                                <div class="flex-1 flex items-center justify-between p-4">
+                                    <span class="text-white font-medium">Blood</span>
+                                    <select id="p-blood"
+                                        class="bg-transparent text-right text-zinc-400 outline-none appearance-none focus:text-blue-500">
+                                        <option value="Unknown">--</option>
+                                        <option value="A+">A+</option>
+                                        <option value="O+">O+</option>
+                                        <option value="B+">B+</option>
+                                        <option value="AB+">AB+</option>
+                                        <option value="A-">A-</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-4 border-b border-zinc-800">
+                                <span class="text-white font-medium">Height (cm)</span>
+                                <input type="number" id="p-height" placeholder="--"
+                                    class="bg-transparent text-right text-zinc-400 outline-none w-20 focus:text-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between p-4">
+                                <span class="text-white font-medium">Weight (kg)</span>
+                                <input type="number" id="p-weight" placeholder="--"
+                                    class="bg-transparent text-right text-zinc-400 outline-none w-20 focus:text-blue-500">
+                            </div>
                         </div>
-                        <div class="flex-1 flex items-center justify-between p-4">
-                            <span class="text-white">Blood</span>
-                            <select id="p-blood"
-                                class="bg-transparent text-right text-zinc-400 outline-none appearance-none">
-                                <option value="Unknown">--</option>
-                                <option value="A+">A+</option>
-                                <option value="O+">O+</option>
-                                <option value="B+">B+</option>
-                                <option value="AB+">AB+</option>
-                                <option value="A-">A-</option>
-                            </select>
+                    </div>
+
+                    <div class="relative group">
+                        <h3 class="text-zinc-500 text-xs font-bold uppercase ml-4 mb-2">Health Conditions</h3>
+
+                        <div
+                            class="bg-[#1c1c1e] p-4 rounded-2xl border border-white/5 flex flex-col gap-3 relative z-50">
+
+                            <div class="relative w-full">
+                                <div class="flex items-center gap-3 border-b border-white/10 pb-2">
+                                    <i class="fa-solid fa-magnifying-glass text-zinc-500"></i>
+
+                                    <input type="text" id="p-condition-search"
+                                        class="flex-1 bg-transparent text-white placeholder-zinc-600 outline-none text-sm h-8"
+                                        placeholder="Type condition (e.g. Diabetes)..." autocomplete="off">
+
+                                    <button onclick="document.getElementById('p-condition-search').focus()"
+                                        class="bg-blue-600 hover:bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform shrink-0">
+                                        <i class="fa-solid fa-plus text-sm"></i>
+                                    </button>
+                                </div>
+
+                                <div id="p-suggestions-box"
+                                    class="hidden absolute top-full left-0 w-full bg-[#2c2c2e] border border-white/20 rounded-b-xl shadow-2xl max-h-60 overflow-y-auto z-[999] mt-1">
+                                </div>
+                            </div>
+
+                            <div id="p-conditions-container" class="flex flex-wrap gap-2 min-h-[10px]"></div>
+                        </div>
+
+                        <p class="text-[10px] text-zinc-600 ml-4 mt-1">Specific conditions help Dr. Paws give accurate
+                            safety warnings.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-zinc-500 text-xs font-bold uppercase ml-4 mb-2">Active Medications</h3>
+                        <div class="bg-[#1c1c1e] rounded-2xl p-4 border border-white/5">
+                            <textarea id="p-meds" rows="3"
+                                class="w-full bg-transparent text-white placeholder-zinc-600 outline-none resize-none leading-relaxed"
+                                placeholder="Ex: Metformin (Morning), Insulin (Night)..."></textarea>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-                        <span class="text-white">Height (cm)</span>
-                        <input type="number" id="p-height" placeholder="--"
-                            class="bg-transparent text-right text-zinc-400 outline-none w-20">
+
+                    <div>
+                        <h3 class="text-zinc-500 text-xs font-bold uppercase ml-4 mb-2">Goals & Location</h3>
+                        <div class="bg-[#1c1c1e] rounded-2xl overflow-hidden border border-white/5">
+                            <div class="flex items-center justify-between p-4 border-b border-zinc-800">
+                                <span class="text-white font-medium">Dietary Goal</span>
+                                <input type="text" id="p-goal" placeholder="Lose weight / Gain muscle"
+                                    class="bg-transparent text-right text-zinc-400 outline-none w-1/2 focus:text-blue-500">
+                            </div>
+                            <div class="flex items-center justify-between p-4">
+                                <span class="text-white font-medium">Location</span>
+                                <input type="text" id="p-location" placeholder="City, Country"
+                                    class="bg-transparent text-right text-zinc-400 outline-none w-1/2 focus:text-blue-500">
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between p-4">
-                        <span class="text-white">Weight (kg)</span>
-                        <input type="number" id="p-weight" placeholder="--"
-                            class="bg-transparent text-right text-zinc-400 outline-none w-20">
+
+                    <div class="pt-8 border-t border-zinc-800 mt-4">
+                        <button onclick="logout()"
+                            class="w-full py-4 bg-[#1c1c1e] border border-zinc-800 text-red-500 font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all group hover:bg-red-900/10 hover:border-red-900/30">
+                            <i
+                                class="fa-solid fa-right-from-bracket group-hover:-translate-x-1 transition-transform"></i>
+                            Log Out
+                        </button>
+                        <p class="text-center text-zinc-600 text-[10px] mt-6 px-8 leading-relaxed">MediPanda v1.0 •
+                            Secure Session</p>
                     </div>
+
                 </div>
             </div>
-
-            <div>
-                <h3 class="text-zinc-500 text-xs font-bold uppercase ml-4 mb-2">Health Conditions</h3>
-                <div class="bg-[#1c1c1e] rounded-xl p-4">
-                    <textarea id="p-conditions" rows="3"
-                        class="w-full bg-transparent text-white placeholder-zinc-600 outline-none resize-none"
-                        placeholder="Ex: Type 2 Diabetes, Asthma, Peanut Allergy..."></textarea>
-                </div>
-            </div>
-
-            <div>
-                <h3 class="text-zinc-500 text-xs font-bold uppercase ml-4 mb-2">Active Medications</h3>
-                <div class="bg-[#1c1c1e] rounded-xl p-4">
-                    <textarea id="p-meds" rows="3"
-                        class="w-full bg-transparent text-white placeholder-zinc-600 outline-none resize-none"
-                        placeholder="Ex: Metformin (Morning), Insulin (Night)..."></textarea>
-                </div>
-            </div>
-
-            <div>
-                <h3 class="text-zinc-500 text-xs font-bold uppercase ml-4 mb-2">Goals & Location</h3>
-                <div class="bg-[#1c1c1e] rounded-xl overflow-hidden">
-                    <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-                        <span class="text-white">Dietary Goal</span>
-                        <input type="text" id="p-goal" placeholder="Lose weight / Gain muscle"
-                            class="bg-transparent text-right text-zinc-400 outline-none w-1/2">
-                    </div>
-                    <div class="flex items-center justify-between p-4">
-                        <span class="text-white">Location</span>
-                        <input type="text" id="p-location" placeholder="City, Country"
-                            class="bg-transparent text-right text-zinc-400 outline-none w-1/2">
-                    </div>
-                </div>
-            </div>
-
-            <p class="text-center text-zinc-600 text-xs px-8">This information is shared with Dr. Paws to provide
-                personalized health advice.</p>
         </div>
     </div>
     <div id="chat-screen" class="hidden flex-1 flex flex-col bg-zinc-950">
@@ -560,6 +650,7 @@
 
         window.addEventListener('load', () => {
             initPreview();
+            updateHomeGreeting();
             // Check for saved user (Guest or Supabase)
             const guestData = localStorage.getItem('paws_guest_profile');
             if (guestData) {
@@ -704,24 +795,39 @@
         }
 
         // E. Update UI Text Fields (Helper)
+        // --- FIXED UPDATE UI FUNCTION ---
         function updateUIWithProfile(data) {
+            // 1. Basic Fields
             if (data.full_name) {
-                // Home Header
+                document.getElementById('p-name').value = data.full_name;
+                // Also update the Home Screen Header
                 const headerName = document.querySelector('h1 span');
                 if (headerName) headerName.innerText = data.full_name.split(' ')[0];
-
-                // Profile Modal Inputs
-                const pName = document.getElementById('p-name');
-                if (pName) pName.value = data.full_name;
+                // Also update the Greeting
+                updateHomeGreeting();
             }
-            if (data.age) document.getElementById('p-age').value = data.age;
-            if (data.blood_group) document.getElementById('p-blood').value = data.blood_group;
-            if (data.conditions) document.getElementById('p-conditions').value = data.conditions;
-            if (data.medications) document.getElementById('p-meds').value = data.medications;
-            if (data.dietary_goal) document.getElementById('p-goal').value = data.dietary_goal;
-            if (data.location) document.getElementById('p-location').value = data.location;
-        }
 
+            // Safely update fields only if they exist
+            if (document.getElementById('p-age')) document.getElementById('p-age').value = data.age || '';
+            if (document.getElementById('p-blood')) document.getElementById('p-blood').value = data.blood_group || 'Unknown';
+            if (document.getElementById('p-meds')) document.getElementById('p-meds').value = data.medications || '';
+            if (document.getElementById('p-goal')) document.getElementById('p-goal').value = data.dietary_goal || '';
+            if (document.getElementById('p-location')) document.getElementById('p-location').value = data.location || '';
+
+            // 2. CRITICAL FIX: Handle Conditions (Tags vs Textbox)
+            // The old code tried: document.getElementById('p-conditions').value = ... (CRASHES)
+
+            // New Logic: Populate the Tags Array
+            if (data.conditions && data.conditions.trim() !== "") {
+                // Split string "Diabetes, Asthma" -> Array ["Diabetes", "Asthma"]
+                profileSelectedConditions = data.conditions.split(', ').filter(i => i);
+            } else {
+                profileSelectedConditions = [];
+            }
+
+            // 3. Render the tags immediately
+            renderProfileTags();
+        }
         // Keep existing bypassAuth for the "Guest" button
         function bypassAuth() {
             currentUser = { id: "guest", isGuest: true };
@@ -785,82 +891,140 @@
         }
         // --- MEDICAL CONDITION TAGGING SYSTEM (Fixed) ---
 
-const MASTER_CONDITIONS = [
-    "Type 1 Diabetes", "Type 2 Diabetes", "Hypertension (High BP)", 
-    "Asthma", "Peanut Allergy", "Shellfish Allergy", "Lactose Intolerance",
-    "Gluten Sensitivity", "Celiac Disease", "Epilepsy", 
-    "Migraine", "Thyroid Disorder", "Arthritis", 
-    "Heart Disease", "Kidney Disease", "None"
-];
+        // --- 1. EXPANDED MEDICAL DATABASE (Professional Grade) ---
+        const MASTER_CONDITIONS = [
+            // Metabolic & Endocrine
+            "Type 1 Diabetes Mellitus", "Type 2 Diabetes Mellitus", "Gestational Diabetes",
+            "Prediabetes", "Hypothyroidism (Hashimoto's)", "Hyperthyroidism (Graves' Disease)",
+            "PCOS (Polycystic Ovary Syndrome)", "Addison's Disease", "Cushing's Syndrome",
+            "Obesity (Class I)", "Obesity (Class II)", "Obesity (Class III)",
 
-let selectedConditions = [];
+            // Cardiovascular (Heart)
+            "Hypertension (Chronic High BP)", "Coronary Artery Disease (CAD)",
+            "Atrial Fibrillation (A-Fib)", "Congestive Heart Failure (CHF)",
+            "History of Myocardial Infarction (Heart Attack)", "Dilated Cardiomyopathy",
+            "Hypertrophic Cardiomyopathy", "Aortic Valve Stenosis", "Mitral Valve Prolapse",
+            "Peripheral Artery Disease (PAD)", "Deep Vein Thrombosis (DVT)",
 
-// Re-attach listeners whenever we switch to Register mode
-function attachConditionListeners() {
-    const input = document.getElementById('condition-search');
-    const suggestionBox = document.getElementById('suggestions-box');
-    
-    if (!input || !suggestionBox) return;
+            // Respiratory (Lungs)
+            "Asthma (Mild Intermittent)", "Asthma (Severe Persistent)",
+            "COPD (Chronic Obstructive Pulmonary Disease)", "Pulmonary Fibrosis",
+            "Sleep Apnea (Obstructive)", "Sleep Apnea (Central)", "Cystic Fibrosis",
+            "Pulmonary Hypertension",
 
-    // Clear old listeners to avoid duplicates (clone node trick)
-    const newInput = input.cloneNode(true);
-    input.parentNode.replaceChild(newInput, input);
-    
-    // Attach 'Input' Event
-    newInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        
-        if (query.length < 1) {
-            suggestionBox.classList.add('hidden');
-            return;
-        }
+            // Oncology (Cancers - Specific)
+            "Breast Cancer (In Remission)", "Breast Cancer (Active Treatment)",
+            "Prostate Cancer", "Lung Cancer (Non-Small Cell)", "Lung Cancer (Small Cell)",
+            "Colorectal Cancer", "Melanoma", "Basal Cell Carcinoma",
+            "Leukemia (ALL)", "Leukemia (AML)", "Leukemia (CLL)", "Leukemia (CML)",
+            "Hodgkin Lymphoma", "Non-Hodgkin Lymphoma", "Pancreatic Cancer",
+            "Ovarian Cancer", "Liver Cancer (Hepatocellular Carcinoma)", "Glioblastoma",
 
-        const matches = MASTER_CONDITIONS.filter(c => 
-            c.toLowerCase().includes(query) && !selectedConditions.includes(c)
-        );
+            // Kidney (Renal)
+            "Chronic Kidney Disease (Stage 1-2)", "Chronic Kidney Disease (Stage 3a/3b)",
+            "Chronic Kidney Disease (Stage 4)", "End-Stage Renal Disease (ESRD)",
+            "Polycystic Kidney Disease (PKD)", "Recurrent Kidney Stones", "Glomerulonephritis",
 
-        if (matches.length > 0) {
-            suggestionBox.innerHTML = matches.map(c => `
+            // Liver & Pancreas
+            "Liver Cirrhosis (Compensated)", "Liver Cirrhosis (Decompensated)",
+            "Non-Alcoholic Fatty Liver Disease (NAFLD)", "NASH",
+            "Chronic Hepatitis B", "Chronic Hepatitis C", "Autoimmune Hepatitis",
+            "Chronic Pancreatitis", "Hemochromatosis",
+
+            // Neurological
+            "Epilepsy / Seizure Disorder", "Migraine (Chronic)", "Alzheimer's Disease",
+            "Parkinson's Disease", "Multiple Sclerosis (MS)", "Myasthenia Gravis",
+            "Peripheral Neuropathy", "Stroke History (Ischemic)", "Stroke History (Hemorrhagic)",
+
+            // Autoimmune & Musculoskeletal
+            "Rheumatoid Arthritis", "Osteoarthritis", "Systemic Lupus Erythematosus (SLE)",
+            "Psoriatic Arthritis", "Ankylosing Spondylitis", "Sjogren's Syndrome",
+            "Gout (Chronic)", "Osteoporosis", "Fibromyalgia",
+
+            // Gastrointestinal
+            "Celiac Disease", "Crohn's Disease", "Ulcerative Colitis",
+            "IBS (Irritable Bowel Syndrome)", "GERD (Chronic Reflux)", "Barrett's Esophagus",
+
+            // Hereditary / Genetic
+            "Sickle Cell Anemia", "Thalassemia Major", "Thalassemia Minor",
+            "Hemophilia A", "Hemophilia B", "Von Willebrand Disease",
+            "Huntington's Disease", "Marfan Syndrome", "Ehlers-Danlos Syndrome",
+            "Lynch Syndrome", "BRCA1 Mutation", "BRCA2 Mutation",
+
+            // Allergies (Severe)
+            "Peanut Allergy (Anaphylactic)", "Shellfish Allergy", "Tree Nut Allergy",
+            "Egg Allergy", "Dairy Allergy", "Soy Allergy", "Wheat Allergy",
+            "Penicillin Allergy", "Sulfa Drug Allergy", "Latex Allergy"
+        ];
+
+        let selectedConditions = [];
+
+        // Re-attach listeners whenever we switch to Register mode
+        function attachConditionListeners() {
+            const input = document.getElementById('condition-search');
+            const suggestionBox = document.getElementById('suggestions-box');
+
+            if (!input || !suggestionBox) return;
+
+            // Clear old listeners to avoid duplicates (clone node trick)
+            const newInput = input.cloneNode(true);
+            input.parentNode.replaceChild(newInput, input);
+
+            // Attach 'Input' Event
+            newInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+
+                if (query.length < 1) {
+                    suggestionBox.classList.add('hidden');
+                    return;
+                }
+
+                const matches = MASTER_CONDITIONS.filter(c =>
+                    c.toLowerCase().includes(query) && !selectedConditions.includes(c)
+                );
+
+                if (matches.length > 0) {
+                    suggestionBox.innerHTML = matches.map(c => `
                 <div onclick="addConditionTag('${c}')" 
                      class="p-3 hover:bg-zinc-700 text-white cursor-pointer border-b border-zinc-700/50 last:border-0 transition text-sm font-medium">
                     ${c}
                 </div>
             `).join('');
-            suggestionBox.classList.remove('hidden');
-        } else {
-            suggestionBox.classList.add('hidden');
+                    suggestionBox.classList.remove('hidden');
+                } else {
+                    suggestionBox.classList.add('hidden');
+                }
+            });
+
+            // Re-focus helper
+            newInput.addEventListener('blur', () => {
+                // Delay hiding so clicks register
+                setTimeout(() => suggestionBox.classList.add('hidden'), 200);
+            });
         }
-    });
 
-    // Re-focus helper
-    newInput.addEventListener('blur', () => {
-        // Delay hiding so clicks register
-        setTimeout(() => suggestionBox.classList.add('hidden'), 200);
-    });
-}
+        // Add Tag
+        function addConditionTag(condition) {
+            if (selectedConditions.includes(condition)) return;
+            selectedConditions.push(condition);
+            renderTags();
 
-// Add Tag
-function addConditionTag(condition) {
-    if (selectedConditions.includes(condition)) return;
-    selectedConditions.push(condition);
-    renderTags();
-    
-    const input = document.getElementById('condition-search');
-    input.value = "";
-    document.getElementById('suggestions-box').classList.add('hidden');
-    input.focus();
-}
+            const input = document.getElementById('condition-search');
+            input.value = "";
+            document.getElementById('suggestions-box').classList.add('hidden');
+            input.focus();
+        }
 
-// Remove Tag
-function removeConditionTag(condition) {
-    selectedConditions = selectedConditions.filter(c => c !== condition);
-    renderTags();
-}
+        // Remove Tag
+        function removeConditionTag(condition) {
+            selectedConditions = selectedConditions.filter(c => c !== condition);
+            renderTags();
+        }
 
-// Render Blue Chips
-function renderTags() {
-    const container = document.getElementById('conditions-container');
-    container.innerHTML = selectedConditions.map(c => `
+        // Render Blue Chips
+        function renderTags() {
+            const container = document.getElementById('conditions-container');
+            container.innerHTML = selectedConditions.map(c => `
         <div class="bg-blue-600/20 border border-blue-500/50 text-blue-400 px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-medium animate-fade-in">
             <span>${c}</span>
             <button onclick="removeConditionTag('${c}')" class="hover:text-white transition">
@@ -868,38 +1032,38 @@ function renderTags() {
             </button>
         </div>
     `).join('');
-}
+        }
 
-// --- UPDATE TOGGLE FUNCTION ---
-// Update your existing toggleAuthMode function to call attachConditionListeners()
-const originalToggle = toggleAuthMode; // Store old ref if needed, or just overwrite:
+        // --- UPDATE TOGGLE FUNCTION ---
+        // Update your existing toggleAuthMode function to call attachConditionListeners()
+        const originalToggle = toggleAuthMode; // Store old ref if needed, or just overwrite:
 
-function toggleAuthMode(mode) {
-    authMode = mode;
-    const btn = document.getElementById('auth-action-btn');
-    const tabLogin = document.getElementById('tab-login');
-    const tabRegister = document.getElementById('tab-register');
-    const regFields = document.getElementById('register-fields');
-    const regAvatar = document.getElementById('register-avatar');
+        function toggleAuthMode(mode) {
+            authMode = mode;
+            const btn = document.getElementById('auth-action-btn');
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const regFields = document.getElementById('register-fields');
+            const regAvatar = document.getElementById('register-avatar');
 
-    if (mode === 'login') {
-        btn.innerText = "Log In";
-        tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all";
-        tabRegister.className = "flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all";
-        regFields.classList.add('hidden');
-        regAvatar.classList.add('hidden');
-    } else {
-        btn.innerText = "Create Profile";
-        tabRegister.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all";
-        tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all";
-        regFields.classList.remove('hidden');
-        regAvatar.classList.remove('hidden');
-        regAvatar.classList.add('flex');
-        
-        // CRITICAL: Activate the search box now that it is visible
-        setTimeout(attachConditionListeners, 100); 
-    }
-}
+            if (mode === 'login') {
+                btn.innerText = "Log In";
+                tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all";
+                tabRegister.className = "flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all";
+                regFields.classList.add('hidden');
+                regAvatar.classList.add('hidden');
+            } else {
+                btn.innerText = "Create Profile";
+                tabRegister.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-zinc-600 text-white transition-all";
+                tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg text-zinc-400 hover:text-white transition-all";
+                regFields.classList.remove('hidden');
+                regAvatar.classList.remove('hidden');
+                regAvatar.classList.add('flex');
+
+                // CRITICAL: Activate the search box now that it is visible
+                setTimeout(attachConditionListeners, 100);
+            }
+        }
 
         // --- 3. PREVIEW MAP (Small Static Image) ---
         function initPreview() {
@@ -1066,7 +1230,69 @@ function toggleAuthMode(mode) {
             }
             btn.innerHTML = originalContent;
         }
+        // --- DYNAMIC GREETING LOGIC ---
+        function updateHomeGreeting() {
+            const textEl = document.getElementById('greeting-text');
+            const nameEl = document.getElementById('greeting-name');
 
+            if (!textEl || !nameEl) return;
+
+            // 1. Time Logic
+            const hour = new Date().getHours();
+            let greeting = "Good Morning,";
+
+            if (hour >= 12 && hour < 17) {
+                greeting = "Good Afternoon,";
+            } else if (hour >= 17 || hour < 5) {
+                greeting = "Good Evening,";
+            }
+
+            textEl.innerText = greeting;
+
+            // 2. Name Logic
+            if (currentUser && currentUser.data && currentUser.data.full_name) {
+                // Get just the first name (e.g., "Siddhant" from "Siddhant Bansod")
+                nameEl.innerText = currentUser.data.full_name.split(' ')[0];
+            } else {
+                nameEl.innerText = "Guest";
+            }
+        }
+        // --- LOGOUT LOGIC (Smooth & Silent) ---
+        function logout() {
+            // 1. Visual Feedback (Button press feel)
+            const btn = event.currentTarget;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Signing out...`;
+
+            setTimeout(() => {
+                // 2. Clear Session Data
+                localStorage.removeItem('paws_guest_profile');
+                currentUser = null;
+
+                // 3. Close Profile Modal Smoothly
+                toggleProfile(false);
+
+                // 4. Reset Forms (So next user sees empty fields)
+                document.getElementById('auth-email').value = "";
+                document.getElementById('auth-password').value = "";
+
+                // 5. Bring back Auth Screen (Fade In)
+                const authScreen = document.getElementById('auth-screen');
+                authScreen.classList.remove('hidden');
+                authScreen.style.opacity = '0'; // Start invisible
+
+                // Force browser paint
+                requestAnimationFrame(() => {
+                    authScreen.style.transition = 'opacity 0.5s ease';
+                    authScreen.style.opacity = '1'; // Fade to black
+                });
+
+                // 6. Reset Button State (Silent Reset)
+                setTimeout(() => {
+                    btn.innerHTML = `<i class="fa-solid fa-right-from-bracket"></i> Log Out`;
+                }, 500);
+
+            }, 600); // Small delay to make it feel "processed"
+        }
         function loadUlweBackups(category) {
             if (category !== 'hospital' && category !== 'clinic') { alert("No results found."); return; }
             const ulweData = [
@@ -1089,18 +1315,44 @@ function toggleAuthMode(mode) {
         }
 
         // --- 7. PROFILE & CHAT (Fixed) ---
+        // --- FIXED UPDATE UI FUNCTION ---
         function updateUIWithProfile(data) {
+            // 1. Basic Fields (Safe Checks)
             if (data.full_name) {
-                document.getElementById('p-name').value = data.full_name;
+                const nameInput = document.getElementById('p-name');
+                if (nameInput) nameInput.value = data.full_name;
+
+                // Update Home Screen Header
                 const headerName = document.querySelector('h1 span');
                 if (headerName) headerName.innerText = data.full_name.split(' ')[0];
+
+                // Update Greeting
+                if (typeof updateHomeGreeting === "function") updateHomeGreeting();
             }
-            document.getElementById('p-age').value = data.age || '';
-            document.getElementById('p-blood').value = data.blood_group || 'Unknown';
-            document.getElementById('p-conditions').value = data.conditions || '';
-            document.getElementById('p-meds').value = data.medications || '';
-            document.getElementById('p-goal').value = data.dietary_goal || '';
-            document.getElementById('p-location').value = data.location || '';
+
+            // Safely update other fields only if they exist
+            if (document.getElementById('p-age')) document.getElementById('p-age').value = data.age || '';
+            if (document.getElementById('p-blood')) document.getElementById('p-blood').value = data.blood_group || 'Unknown';
+            if (document.getElementById('p-meds')) document.getElementById('p-meds').value = data.medications || '';
+            if (document.getElementById('p-goal')) document.getElementById('p-goal').value = data.dietary_goal || '';
+            if (document.getElementById('p-location')) document.getElementById('p-location').value = data.location || '';
+            if (document.getElementById('p-height')) document.getElementById('p-height').value = data.height || '';
+            if (document.getElementById('p-weight')) document.getElementById('p-weight').value = data.weight || '';
+
+            // 2. CRITICAL FIX: Handle Conditions (Tags vs Old Textbox)
+            // The old code crashed here because 'p-conditions' ID is gone.
+
+            // New Logic: Populate the Global Tags Array
+            if (data.conditions && data.conditions.trim() !== "") {
+                // Split string "Diabetes, Asthma" -> Array ["Diabetes", "Asthma"]
+                profileSelectedConditions = data.conditions.split(', ').filter(i => i);
+            } else {
+                profileSelectedConditions = [];
+            }
+
+            // 3. Render the tags immediately
+            if (typeof renderProfileTags === "function") renderProfileTags();
+            updateHomeGreeting();
         }
 
         async function saveAndCloseProfile() {
@@ -1111,10 +1363,16 @@ function toggleAuthMode(mode) {
                 full_name: document.getElementById('p-name').value,
                 age: document.getElementById('p-age').value,
                 blood_group: document.getElementById('p-blood').value,
-                conditions: document.getElementById('p-conditions').value,
+
+                // JOIN TAGS ARRAY INTO A STRING FOR SAVING
+                conditions: profileSelectedConditions.join(", "),
+
                 medications: document.getElementById('p-meds').value,
                 dietary_goal: document.getElementById('p-goal').value,
-                location: document.getElementById('p-location').value
+                location: document.getElementById('p-location').value,
+
+                // Preserve existing photo if not changed here
+                photo: currentUser.data.photo
             };
 
             // SAVE TO LOCAL STORAGE (Guest Mode)
@@ -1153,12 +1411,187 @@ function toggleAuthMode(mode) {
         }
 
         // --- 8. HELPERS (Navigation, Camera, Etc) ---
+        // --- FIXED TOGGLE FUNCTION ---
         function toggleProfile(show) {
             const modal = document.getElementById('profile-modal');
-            const content = modal.querySelector('div');
-            if (show) { modal.classList.remove('opacity-0', 'pointer-events-none'); content.classList.remove('translate-y-full'); }
-            else { modal.classList.add('opacity-0', 'pointer-events-none'); content.classList.add('translate-y-full'); }
+            // Select the elements that are "bleeding through"
+            const home = document.getElementById('home-screen');
+            const island = document.getElementById('dynamic-island');
+            const askAiBtn = document.querySelector('button[onclick*="showScreen(\'chat\')"]'); // The floating blue button
+
+            if (!modal) return;
+
+            if (show) {
+                // 1. Show the Profile Modal
+                modal.classList.remove('hidden');
+
+                // 2. Hide Background Elements (So they don't overlap)
+                if (home) home.classList.add('hidden');
+                if (island) island.classList.add('hidden');
+                if (askAiBtn) askAiBtn.classList.add('hidden');
+                setTimeout(attachProfileConditionListeners, 500);
+
+                // 3. Slide In Animation
+                requestAnimationFrame(() => {
+                    modal.classList.remove('translate-x-full');
+                    modal.classList.add('translate-x-0');
+                });
+
+                // 4. Load Data
+                if (currentUser && currentUser.data) {
+                    updateUIWithProfile(currentUser.data);
+                    // 2. Load Conditions (Split string back into Array)
+                    if (currentUser.data.conditions && currentUser.data.conditions.trim() !== "") {
+                        profileSelectedConditions = currentUser.data.conditions.split(', ').filter(i => i);
+                    } else {
+                        profileSelectedConditions = [];
+                    }
+                    renderProfileTags();
+                    setTimeout(attachProfileConditionListeners, 100);
+                }
+            } else {
+                // 1. Slide Out Animation
+                modal.classList.remove('translate-x-0');
+                modal.classList.add('translate-x-full');
+
+                // 2. Bring Back Background Elements
+                if (home) home.classList.remove('hidden');
+                if (island) island.classList.remove('hidden');
+                if (askAiBtn) askAiBtn.classList.remove('hidden');
+
+                // 3. Fully Hide Modal after animation finishes (300ms)
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
         }
+        // --- PROFILE TAGGING LOGIC ---
+
+        let profileSelectedConditions = []; // Separate array for the profile screen
+
+        function attachProfileConditionListeners() {
+    const input = document.getElementById('p-condition-search');
+    const suggestionBox = document.getElementById('p-suggestions-box');
+    
+    if (!input || !suggestionBox) return;
+
+    // Remove old listeners by cloning
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+
+    // Typing Event
+    newInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        
+        if (query.length < 1) { 
+            suggestionBox.classList.add('hidden');
+            return;
+        }
+
+        const matches = MASTER_CONDITIONS.filter(c => 
+            c.toLowerCase().includes(query) && !profileSelectedConditions.includes(c)
+        );
+
+        if (matches.length > 0) {
+            suggestionBox.innerHTML = matches.map(c => `
+                <div onclick="addProfileTag('${c}')" 
+                     class="p-3 text-white hover:bg-blue-600 cursor-pointer border-b border-white/10 text-sm font-medium transition-colors">
+                    ${c}
+                </div>
+            `).join('');
+            suggestionBox.classList.remove('hidden');
+        } else {
+            suggestionBox.innerHTML = `<div class="p-3 text-zinc-500 text-sm italic">No match found</div>`;
+            suggestionBox.classList.remove('hidden');
+        }
+    });
+
+    // Hide when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#p-condition-search') && !e.target.closest('#p-suggestions-box')) {
+            suggestionBox.classList.add('hidden');
+        }
+    });
+}
+        // 1. Initialize Listeners (Call this when Profile Opens)
+        function attachProfileConditionListeners() {
+            const input = document.getElementById('p-condition-search');
+            const suggestionBox = document.getElementById('p-suggestions-box');
+
+            if (!input || !suggestionBox) return;
+
+            // Clone to remove old listeners (prevents duplicate triggers)
+            const newInput = input.cloneNode(true);
+            input.parentNode.replaceChild(newInput, input);
+
+            // INPUT EVENT: Filter the Master List
+            newInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+
+                // Hide if empty
+                if (query.length < 1) {
+                    suggestionBox.classList.add('hidden');
+                    return;
+                }
+
+                // Filter Logic
+                const matches = MASTER_CONDITIONS.filter(c =>
+                    c.toLowerCase().includes(query) && !profileSelectedConditions.includes(c)
+                );
+
+                // Render Dropdown
+                if (matches.length > 0) {
+                    suggestionBox.innerHTML = matches.map(c => `
+                <div onclick="addProfileTag('${c}')" 
+                     class="p-3 hover:bg-blue-600/20 hover:text-blue-400 text-zinc-300 cursor-pointer border-b border-white/5 last:border-0 transition text-sm font-medium flex justify-between items-center group">
+                    <span>${c}</span>
+                    <i class="fa-solid fa-plus text-zinc-600 group-hover:text-blue-500"></i>
+                </div>
+            `).join('');
+                    suggestionBox.classList.remove('hidden');
+                } else {
+                    suggestionBox.innerHTML = `<div class="p-3 text-zinc-500 text-sm italic">No matching condition found.</div>`;
+                    suggestionBox.classList.remove('hidden');
+                }
+            });
+
+            // CLICK AWAY: Hide dropdown
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#p-condition-search') && !e.target.closest('#p-suggestions-box')) {
+                    suggestionBox.classList.add('hidden');
+                }
+            });
+        }
+
+        // 2. Add Tag
+        function addProfileTag(condition) {
+    if (profileSelectedConditions.includes(condition)) return;
+    profileSelectedConditions.push(condition);
+    renderProfileTags();
+    
+    // Reset Input
+    const input = document.getElementById('p-condition-search');
+    input.value = "";
+    document.getElementById('p-suggestions-box').classList.add('hidden');
+    input.focus();
+}
+
+function removeProfileTag(condition) {
+    profileSelectedConditions = profileSelectedConditions.filter(c => c !== condition);
+    renderProfileTags();
+}
+
+function renderProfileTags() {
+    const container = document.getElementById('p-conditions-container');
+    if (!container) return;
+
+    container.innerHTML = profileSelectedConditions.map(c => `
+        <div class="bg-blue-600/20 border border-blue-500/50 text-blue-400 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold">
+            <span>${c}</span>
+            <button onclick="removeProfileTag('${c}')" class="hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    `).join('');
+}
 
         function formatAIResponse(text) {
             let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>'); formatted = formatted.replace(/\n/g, '<br>'); formatted = formatted.replace(/^\* /gm, '• '); return formatted;
@@ -1232,9 +1665,15 @@ function toggleAuthMode(mode) {
             <div
                 class="absolute top-0 left-0 w-full p-6 pt-12 z-[1001] flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
                 <h2 class="text-2xl font-bold text-white drop-shadow-md pointer-events-auto">Nearby Services</h2>
+
                 <button onclick="closeMapModal()"
-                    class="bg-black/50 backdrop-blur-md text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/10 pointer-events-auto active:scale-90 transition shadow-lg">
-                    <i class="fa-solid fa-xmark"></i>
+                    class="bg-black/50 backdrop-blur-md text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/10 pointer-events-auto active:scale-90 transition shadow-lg group hover:bg-zinc-800">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round"
+                        class="group-hover:rotate-90 transition-transform duration-300">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
                 </button>
             </div>
 
@@ -1271,7 +1710,6 @@ function toggleAuthMode(mode) {
                                 class="fa-solid fa-user-doctor text-purple-500 text-sm"></i></div>
                         <span class="text-[10px] font-bold text-zinc-300">Clinic</span>
                     </button>
-
                 </div>
             </div>
         </div>
