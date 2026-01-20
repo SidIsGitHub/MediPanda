@@ -35,8 +35,7 @@
 
         <div class="fixed inset-0 auth-bg-gradient z-0 opacity-60 pointer-events-none"></div>
 
-        <img src="assets/panda-paw.svg"
-        decoding="async"
+        <img src="assets/panda-paw.svg" decoding="async"
             class="fixed -bottom-40 -right-40 w-[180vw] max-w-[1000px] opacity-[0.03] rotate-[25deg] z-0 pointer-events-none select-none"
             alt="Background Decoration">
 
@@ -458,34 +457,32 @@
             </div>
         </div>
     </div>
-    <div id="chat-screen" class="hidden flex-1 flex flex-col bg-zinc-950">
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 pb-32 space-y-4">
-            <div class="flex justify-start">
-                <div
-                    class="bg-zinc-800 text-gray-200 p-3 rounded-2xl rounded-tl-none max-w-[80%] border border-zinc-700 shadow-sm text-sm">
-                    Hello! I'm Dr. Paws. Ask me anything!
-                </div>
+    <div id="chat-screen" class="hidden fixed inset-0 bg-zinc-950 z-40 flex flex-col h-[100dvh]">
+    
+    <div id="chat-container" class="flex-1 min-h-0 overflow-y-auto px-4 pt-32 pb-4 space-y-4">
+        
+        <div class="flex justify-start fade-enter fade-enter-active">
+            <div class="bg-zinc-800 text-gray-200 p-3 rounded-2xl rounded-tl-none max-w-[80%] border border-zinc-700 shadow-sm text-sm">
+                Hello! I'm Dr. Paws. Ask me anything!
             </div>
         </div>
-        <div class="w-full bg-zinc-900 border-t border-zinc-800 p-4 pb-28">
-            <div class="flex items-center gap-3">
 
-                <button onclick="document.getElementById('camera-input').click()"
-                    class="text-zinc-400 hover:text-white transition">
-                    <i class="fa-solid fa-camera"></i>
-                </button>
+    </div>
 
-                <input type="text" id="user-input"
-                    class="flex-1 bg-zinc-800 text-white rounded-full px-5 py-3 outline-none border border-zinc-700 focus:border-blue-500 transition placeholder-zinc-500"
-                    placeholder="Ask Dr. Paws..." onkeypress="if(event.key === 'Enter') sendMessage()">
+    <div class="w-full bg-zinc-900 border-t border-zinc-800 p-4 pb-8 shrink-0 z-50">
+        <div class="flex items-center gap-3">
+            <input type="text" id="user-input" 
+                   class="flex-1 bg-zinc-800 text-white rounded-full px-5 py-3 outline-none border border-zinc-700 focus:border-blue-500 transition placeholder-zinc-500"
+                   placeholder="Ask Dr. Paws..." 
+                   onkeypress="if(event.key === 'Enter') sendMessage()">
 
-                <button onclick="sendMessage()"
-                    class="bg-blue-600 text-white w-12 h-12 rounded-full hover:bg-blue-500 transition shadow-lg active:scale-90 flex items-center justify-center flex-shrink-0">
-                    <i class="fa-solid fa-paper-plane text-sm"></i>
-                </button>
-            </div>
+            <button onclick="sendMessage()" 
+                    class="bg-blue-600 text-white w-12 h-12 rounded-full hover:bg-blue-500 transition shadow-lg flex items-center justify-center shrink-0 active:scale-90">
+                <i class="fa-solid fa-paper-plane text-sm"></i>
+            </button>
         </div>
     </div>
+</div>
     </div>
 
 

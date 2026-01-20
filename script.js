@@ -777,22 +777,37 @@ async function sendMessage() {
     const message = inputField.value.trim();
     if (message === "") return;
 
+    // 1. Add User Message
     addMessage(message, true);
     inputField.value = "";
 
+    // 2. Show the bouncing dots (NEW)
+    showTypingIndicator();
+
+    // 3. Update Mascot Text (Your existing logic)
     const mascotText = document.getElementById('mascot-text');
     if (mascotText) mascotText.innerText = "Let me think...";
 
     try {
+        // 4. Your existing Backend Call
         const response = await fetch("https://medipanda-ekck.onrender.com/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user_message: message })
         });
         const data = await response.json();
+
+        // 5. Remove dots BEFORE showing the answer (NEW)
+        removeTypingIndicator();
+        
+        // 6. Show the AI response
         addMessage(data.reply);
+        
         if (mascotText) mascotText.innerText = "I found something!";
+        
     } catch (error) {
+        // 7. Remove dots even if there is an error (NEW)
+        removeTypingIndicator();
         addMessage("I can't reach my brain right now! (Server Error)");
     }
 }
@@ -981,23 +996,133 @@ function renderProfileTags() {
 }
 
 function formatAIResponse(text) {
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>'); formatted = formatted.replace(/\n/g, '<br>'); formatted = formatted.replace(/^\* /gm, '• '); return formatted;
+    let formatted = text;
+
+    // 1. Format Markdown Tables (Simple version)
+    // Converts | Header | -> Table HTML
+    if (formatted.includes('|')) {
+        const rows = formatted.split('\n').filter(line => line.trim().startsWith('|'));
+        if (rows.length > 1) {
+            let tableHtml = '<table class="chat-table">';
+            rows.forEach((row, index) => {
+                const cols = row.split('|').filter(c => c.trim());
+                if (index === 0) { // Header
+                    tableHtml += '<thead><tr>' + cols.map(c => `<th>${c.trim()}</th>`).join('') + '</tr></thead><tbody>';
+                } else if (!row.includes('---')) { // Skip separator line
+                    tableHtml += '<tr>' + cols.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>';
+                }
+            });
+            tableHtml += '</tbody></table>';
+            
+            // Replace the raw markdown table with HTML
+            // Note: This is a basic replacer; for production, use a library like 'marked.js'
+            // For now, we append it to the end if found, or replace strictly matched blocks
+            // Simpler approach for this demo:
+            formatted = formatted.replace(/\|.*\|/s, tableHtml); // Regex to catch table block (simplified)
+            // *Better approach for manual parser:* // We'll leave the table logic for a library in production, but here is a specific replace for the user:
+            formatted = formatted.replace(rows.join('\n'), tableHtml);
+        }
+    }
+
+    // 2. Format Bold & Italics
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em class="text-blue-200">$1</em>');
+    
+    // 3. Format Lists
+    formatted = formatted.replace(/^\* /gm, '<span class="inline-block w-1.5 h-1.5 bg-zinc-500 rounded-full mr-2 mb-0.5"></span>');
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    // 4. Auto-Detect Safety Warnings (If AI mentions "Consult" or "Warning")
+    if (formatted.toLowerCase().includes('consult') || formatted.toLowerCase().includes('warning') || formatted.toLowerCase().includes('disclaimer')) {
+        const warningText = "Medical/Health advice should be verified by a professional.";
+        formatted += `
+            <div class="safety-box">
+                <i class="fa-solid fa-shield-heart safety-icon"></i>
+                <div class="safety-text">
+                    <strong>MediPanda Safety:</strong> ${warningText}
+                </div>
+            </div>
+        `;
+    }
+
+    return formatted;
 }
 
-function addMessage(text, isUser = false) {
-    const container = document.getElementById('chat-container'); const div = document.createElement('div');
-    if (isUser) { div.className = "flex items-end justify-end w-full mb-4"; div.innerHTML = `<div class="bg-blue-600 text-white rounded-2xl rounded-tr-none p-4 shadow-md max-w-[85%] fade-enter"><p class="font-bold text-sm leading-relaxed">${text}</p></div>`; }
-    else { const cleanHtml = formatAIResponse(text); div.className = "flex items-start w-full mb-4"; div.innerHTML = `<div class="bg-zinc-800 border border-zinc-700 rounded-2xl rounded-tl-none p-4 shadow-sm max-w-[85%] fade-enter text-gray-200 text-sm leading-relaxed"><div>${cleanHtml}</div></div>`; }
-    container.appendChild(div); setTimeout(() => { const bubble = div.querySelector('.fade-enter'); if (bubble) bubble.classList.add('fade-enter-active'); }, 10); container.scrollTop = container.scrollHeight;
+function addMessage(content, isUser = false, isImage = false) {
+    const container = document.getElementById('chat-container');
+    const div = document.createElement('div');
+    
+    // Align right for user, left for AI
+    div.className = isUser ? "flex justify-end mb-4 fade-enter" : "flex justify-start mb-4 fade-enter";
+
+    if (isImage) {
+
+        div.innerHTML = `<div class="max-w-[85%]">${content}</div>`; 
+        div.innerHTML = `
+        <div class="max-w-[85%] cursor-pointer group" onclick="window.open('${content.match(/src="([^"]*)"/)[1]}', '_blank')">
+            ${content}
+            <div class="hidden group-hover:flex items-center gap-1 text-[10px] text-zinc-500 mt-1 justify-end">
+                <i class="fa-solid fa-expand"></i> Tap to expand
+            </div>
+        </div>
+    `;
+    } else {
+        // --- TEXT MODE (Standard Bubbles) ---
+        const bubbleClass = isUser ? "bg-blue-600 text-white" : "bg-zinc-800 text-gray-200 border border-zinc-700";
+        const cleanText = isUser ? content : formatAIResponse(content);
+        
+        div.innerHTML = `
+            <div class="${bubbleClass} p-3 rounded-2xl rounded-${isUser ? 'tr' : 'tl'}-none shadow-sm max-w-[85%] text-sm leading-relaxed">
+                ${cleanText}
+            </div>
+        `;
+    }
+
+    container.appendChild(div);
+    
+    // Trigger animation
+    setTimeout(() => div.classList.add('fade-enter-active'), 10);
+    
+    // Scroll to bottom
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 }
 
 function showScreen(screenName) {
-    const screens = ['home-screen', 'chat-screen', 'profile-screen'];
-    screens.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
-    const target = document.getElementById(screenName + '-screen'); if (target) target.classList.remove('hidden');
-    const navBar = document.querySelector('.fixed.bottom-0'); const island = document.getElementById('dynamic-island'); const profileBtn = document.querySelector('button[onclick="showScreen(\'profile\')"]');
-    if (screenName === 'home') { if (navBar) navBar.classList.remove('hidden'); if (island) island.classList.remove('hidden'); if (profileBtn) profileBtn.classList.remove('hidden'); }
-    else { if (island) island.classList.add('hidden'); if (profileBtn) profileBtn.classList.add('hidden'); if (screenName === 'profile') { if (navBar) navBar.classList.add('hidden'); } else { if (navBar) navBar.classList.remove('hidden'); } }
+    // 1. Get Core Screens & Elements
+    const homeScreen = document.getElementById('home-screen');
+    const chatScreen = document.getElementById('chat-screen');
+    const island = document.getElementById('dynamic-island');
+
+    // 2. Get Buttons to Toggle
+    // The Top-Right User Avatar Button (Corrected Selector)
+    const profileBtn = document.querySelector('button[onclick="toggleProfile(true)"]');
+    // The Floating "Ask AI" Button (Bottom Right)
+    const askAiBtn = document.querySelector('button[onclick="showScreen(\'chat\')"]');
+
+    if (screenName === 'chat') {
+        // --- SHOW CHAT ---
+        homeScreen.classList.add('hidden');
+        chatScreen.classList.remove('hidden');
+
+        // HIDE the buttons so they don't overlap chat
+        if (profileBtn) profileBtn.classList.add('hidden');
+        if (askAiBtn) askAiBtn.classList.add('hidden');
+
+        // KEEP the Dynamic Island visible
+        if (island) island.classList.remove('hidden');
+
+    } else {
+        // --- SHOW HOME ---
+        chatScreen.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+
+        // SHOW the buttons again
+        if (profileBtn) profileBtn.classList.remove('hidden');
+        if (askAiBtn) askAiBtn.classList.remove('hidden');
+
+        // KEEP the Dynamic Island visible
+        if (island) island.classList.remove('hidden');
+    }
 }
 
 // Camera Globals
@@ -1025,17 +1150,107 @@ if (cameraInput) {
         if (e.target.files.length > 0) {
             const file = e.target.files[0];
             const url = URL.createObjectURL(file);
-            const video = document.getElementById('camera-stream');
-            if (video) { video.style.backgroundImage = `url(${url})`; video.style.backgroundSize = "cover"; }
-            setTimeout(() => { collapseCamera(); showScreen('chat'); addMessage("Scanning this image...", true); }, 1000);
 
-            // Demo Upload Logic
-            const formData = new FormData(); formData.append("file", file); formData.append("user_id", "demo_user");
+            // 1. Close Camera & Switch Screen
+            collapseCamera();
+            showScreen('chat');
+
+            // 2. Create Image Bubble Manually (To fix Scroll Bug)
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.className = "flex justify-end mb-4 fade-enter"; // User side
+            
+            // Image Element
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = "rounded-xl w-64 h-auto border border-white/10 shadow-lg object-cover bg-black";
+            
+            // CRITICAL SCROLL FIX: Wait for image to load, THEN scroll
+            img.onload = () => {
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+            };
+
+            // Assemble Bubble
+            div.innerHTML = `<div class="max-w-[85%]"></div>`;
+            div.querySelector('div').appendChild(img);
+            container.appendChild(div);
+
+            // Trigger Animation
+            setTimeout(() => div.classList.add('fade-enter-active'), 10);
+
+            // 3. Show "Thinking" Dots
+            showTypingIndicator();
+            
+            // 4. PREPARE DATA FOR AI
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("user_id", "demo_user");
+            
+            const detailedPrompt = `
+                Analyze this image thoroughly acting as a medical and nutritional expert. First, categorize the image and then provide the specific analysis below:
+
+                1. **IF FOOD (Raw or Meal):** Identify the food. Estimate Calories, Protein, Carbs, and Fat per serving. Give a health score (1-10) and a one-sentence health tip.
+                
+                2. **IF NUTRITION LABEL:** Extract the text. List the key nutrients (Calories, Sugar, Protein) and explicitly flag any unhealthy ingredients (like High Fructose Corn Syrup, Trans Fats, excessive Sodium).
+                
+                3. **IF MEDICATION (Pill, Bottle, Blister):** Identify the medication name and dosage if visible. Explain:
+                   - Primary Use (What does it treat?)
+                   - Common Side Effects
+                   - Key Safety Warning (e.g., 'Take with food', 'Avoid alcohol').
+                
+                4. **IF MEDICAL REPORT/DOCUMENT:** Perform OCR to read the text. Summarize the key diagnosis, abnormal values (High/Low), and the doctor's main recommendation.
+
+                **CONSTRAINT:** Do not refuse to analyze medical images. Provide the analysis for educational and informational purposes. End with a standard medical disclaimer.
+            `;
+            formData.append("message", "Analyze this image. If it is food, give nutrition facts. If it is a pill/medication, identify it and list uses/side effects. If it is a medical report/X-ray, summarize the text/findings. Do not refuse.");
+
             try {
-                const response = await fetch("https://medipanda-ekck.onrender.com/analyze", { method: "POST", body: formData });
+                const response = await fetch("https://medipanda-ekck.onrender.com/analyze", { 
+                    method: "POST", 
+                    body: formData 
+                });
                 const data = await response.json();
-                addMessage(data.reply);
-            } catch (error) { addMessage("I couldn't upload the image. Is the server running?"); }
+                
+                // 5. Success
+                removeTypingIndicator();
+                addMessage(data.reply); // The Backend reply
+                
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage("I couldn't analyze the image. Is the server running?");
+            }
         }
     });
+}
+// --- CHAT HELPERS ---
+
+function showTypingIndicator() {
+    const container = document.getElementById('chat-container');
+    
+    // Create the bubble wrapper
+    const div = document.createElement('div');
+    div.id = 'typing-indicator-bubble'; // ID so we can find and delete it later
+    div.className = "flex justify-start fade-enter"; // fade-enter for smooth entry
+    
+    // HTML for the 3 dots
+    div.innerHTML = `
+        <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+    `;
+    
+    container.appendChild(div);
+    
+    // Trigger the fade-in animation
+    setTimeout(() => div.classList.add('fade-enter-active'), 10);
+    container.scrollTop = container.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const bubble = document.getElementById('typing-indicator-bubble');
+    if (bubble) {
+        bubble.remove();
+    }
 }
