@@ -1,0 +1,192 @@
+
+        /* --- NEW AUTH SCREEN STYLES --- */
+
+        /* 1. The Apple-style Mesh Gradient Background */
+        .auth-bg-gradient {
+            background: radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* 2. The Glass Card Effect */
+        .glass-panel {
+            background: rgba(28, 28, 30, 0.65);
+            /* Dark semi-transparent */
+            backdrop-filter: blur(25px);
+            /* Heavy Blur (Apple Style) */
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: "Inter", sans-serif;
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        /* The iOS-style Spring Animation */
+        .ios-spring {
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            /* Apple's "Spring" curve */
+        }
+
+        .fade-enter {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+
+        .fade-enter-active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* --- ADD THESE NEW STYLES INSIDE YOUR EXISTING <style> TAG --- */
+
+        /* 1. Dark Mode Base */
+        body {
+            background-color: #09090b;
+            color: #ffffff;
+            /* White text by default */
+        }
+
+        /* 2. Apple Music Style Animated Gradients */
+        .animated-gradient-1 {
+            background: linear-gradient(135deg, #ff4b1f, #ff9068);
+            background-size: 200% 200%;
+            animation: gradientMove 6s ease infinite;
+        }
+
+        .animated-gradient-2 {
+            background: linear-gradient(135deg, #8E2DE2, #4A00E0);
+            background-size: 200% 200%;
+            animation: gradientMove 8s ease infinite;
+        }
+
+        @keyframes gradientMove {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* 3. Utility to hide scrollbars for a cleaner look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* iOS-style Fluid Expansion */
+        .app-transition {
+            transition:
+                top 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                left 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                width 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                border-radius 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity 0.2s ease-out;
+            /* Faster fade for the container itself */
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+            /* Deeper shadow during flight */
+        }
+
+        /* Content Fade Logic - The Secret to Smoothness */
+        .content-hidden {
+            opacity: 0;
+            transform: scale(0.98);
+            /* Slight zoom out effect */
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        .content-visible {
+            opacity: 1;
+            transform: scale(1);
+            /* Delay fade-in until card is mostly open (0.3s delay) */
+            transition: opacity 0.4s ease-out 0.3s, transform 0.4s ease-out 0.3s;
+        }
+        /* --- MOBILE PERFORMANCE HACKS --- */
+@media (max-width: 768px) {
+    
+    .animated-gradient-1, .animated-gradient-2 {
+        animation: none !important;
+        background: linear-gradient(135deg, #ff4b1f, #ff9068); /* Static fallback */
+    }
+    .glass-panel, .backdrop-blur-md, .bg-black\/90, .bg-zinc-900\/90 {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        /* Use solid dark semi-transparent background instead of glass */
+        background-color: rgba(20, 20, 20, 0.96) !important;
+    }
+    
+    /* 2. Simplify Shadows */
+    .shadow-2xl, .shadow-xl {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
+    }
+}
+
+/* 3. Hardware Acceleration Hints (Add to existing classes) */
+.ios-spring, .app-transition, #mascot-svg {
+    will-change: transform, opacity; /* Tells GPU to prepare */
+}
+/* --- ISOLATION OPTIMIZATION --- */
+
+/* 1. Isolate the Map & Chat */
+/* Prevents the browser from recalculating the whole Home Screen when you scroll chat or move map */
+#map-modal, #chat-screen, #auth-screen {
+    contain: layout paint style; 
+}
+
+/* 2. Faster Button Taps */
+/* Removes the 300ms delay browsers add to check for "double tap" */
+button, .map-btn, .group {
+    touch-action: manipulation;
+}
+
+/* 3. Text Rendering Speed */
+/* Ensures text is visible immediately, even if the font file hasn't finished downloading */
+body {
+    font-display: swap; 
+}
