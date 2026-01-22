@@ -4,38 +4,27 @@ from fastapi.middleware.cors import CORSMiddleware
 import google.generativeai as genai
 from PIL import Image
 import io
-# --- NEW IMPORT FOR DATABASE ---
 from supabase import create_client, Client
 
 app = FastAPI()
 
 # --- 1. CONFIGURATION ---
-
-# --- SECURITY FIX: READ FROM RENDER ---
-# We ONLY read from environment variables. 
-# If testing locally, make sure these are set in your terminal or .env file.
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# Check if keys exist before crashing
 if not GOOGLE_API_KEY:
     print("CRITICAL: GOOGLE_API_KEY is missing!")
 else:
     genai.configure(api_key=GOOGLE_API_KEY)
-    # Use the stable model version
-    # Use the alias that worked for your specific account
-model = genai.GenerativeModel('models/gemini-flash-latest') 
 
-# Configure Database
+# Database
 supabase = None
 if SUPABASE_URL and SUPABASE_KEY:
     try:
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
-        print(f"Warning: Supabase connection failed. {e}")
-else:
-    print("Warning: Supabase keys missing. Database features will fail.")
+        print(f"Supabase Error: {e}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,94 +33,88 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- YOUR CUSTOM PROMPT ---
-SYSTEM_PROMPT = """ou are MediPanda, an advanced medical and nutritional assistant. Your Goal: Analyze the image provided by the user.
+# --- 2. THE PERSONA (Dr. Paws) ---
+# We use this to strictly enforce the personality.
+DR_PAWS_INSTRUCTION = """
+You are Dr. Paws, a friendly, warm, and empathetic AI health companion. 🐼
+Your goal is to support the user with simple, clear advice.
 
-1. IF FOOD: Extract calories, protein, carbs, and healthiness. 2. IF MEDICATION: Identify the pill/bottle. State the Name, Usage, and Common Side Effects. 3. IF MEDICAL REPORT/X-RAY: Perform OCR to read the text. Summarize the Diagnosis and Key Values (e.g., 'Hemoglobin is low'). 4. IF GENERAL: Describe what you see medically.
+CORE RULES:
+1. NEVER say "I am MediPanda". You are Dr. Paws.
+2. TONE: Use simple English (Explain Like I'm 5). Be kind. Use emojis (💊, 🥗, 🩺).
+3. MEMORY: Use the user's name if provided.
+4. REFUSALS: Never bluntly refuse. If asked for medical advice, give general educational info and add: "But always check with a doctor! 🐼"
+"""
 
-SAFETY: You must answer the user's question. Do not refuse. Instead, append this disclaimer at the end: 'Note: AI analysis is for educational purposes only. Consult a doctor."""
+# --- 3. ENDPOINTS ---
 
-# --- NEW HELPER: GET USER MEMORY ---
-def get_user_profile(user_id: str):
-    """Fetch user context from DB. If none or DB down, return default."""
-    if not supabase:
-        return "General Health"
-        
-    try:
-        # Ask Supabase for this user's data
-        response = supabase.table("user_profiles").select("medical_data").eq("device_id", user_id).execute()
-        
-        # If found, return their specific condition
-        if response.data and len(response.data) > 0:
-            return response.data[0]['medical_data']
-        return "General Health"
-    except Exception as e:
-        print(f"Database Error: {e}")
-        return "General Health"
-
-# --- ENDPOINTS ---
 @app.get("/")
 async def root():
-    return {"message": "Dr. Paws Brain is Online! 🐼"}
+    return {"message": "Dr. Paws is ready!"}
 
 @app.post("/chat")
 async def chat_endpoint(data: dict):
-    user_message = data.get("user_message", "") # Fix: Handle missing key safely
+    user_message = data.get("user_message", "")
+    history = data.get("history", [])
     
-    # Simple Chat doesn't usually read profile, but we default to General
-    current_prompt = SYSTEM_PROMPT.replace("{user_context}", "General Health")
+    # Get User Context (Name/Health) from Frontend
+    user_details = data.get("user_details", "User: Guest") 
+
+    # 1. Setup Model with System Instruction
+    # We inject the Persona AND the User's specific details here
+    system_prompt = f"{DR_PAWS_INSTRUCTION}\n\nCONTEXT:\n{user_details}"
     
+    model = genai.GenerativeModel(
+        'models/gemini-1.5-flash',
+        system_instruction=system_prompt
+    )
+
+    # 2. Build History
+    gemini_history = []
+    for msg in history:
+        role = "user" if msg.get("role") == "user" else "model"
+        gemini_history.append({"role": role, "parts": [msg.get("content", "")]})
+
     try:
-        chat = model.start_chat(history=[])
-        response = chat.send_message(f"{current_prompt}\n\nUser: {user_message}")
+        chat = model.start_chat(history=gemini_history)
+        response = chat.send_message(user_message)
         return {"reply": response.text}
     except Exception as e:
-        return {"reply": "I'm having a little panda brain freeze! Try again in a minute. 🐼"}
+        return {"reply": "I'm feeling a bit fuzzy. Can you say that again? 🐼"}
 
-@app.post("/analyze") # NOTE: Changed from /analyze to /analyze_image to match your frontend!
-async def analyze_image(file: UploadFile = File(...), user_id: str = Form("guest")):
+@app.post("/analyze")
+async def analyze_image(
+    file: UploadFile = File(...), 
+    user_id: str = Form("guest"), 
+    message: str = Form(None)
+):
     try:
-        # 1. FETCH MEMORY
-        real_context = get_user_profile(user_id)
-        
-        # 2. READ IMAGE
         contents = await file.read()
+        image = Image.open(io.BytesIO(contents))
         
-        # Check empty file
-        if not contents:
-             return {"reply": "I couldn't see anything! Try taking the photo again."}
-
-        try:
-            image = Image.open(io.BytesIO(contents))
-        except Exception:
-            return {"reply": "That image file format is tricky. Try a standard JPG or PNG!"}
+        # Friendly Analyst Persona
+        model = genai.GenerativeModel(
+            'models/gemini-1.5-flash',
+            system_instruction=DR_PAWS_INSTRUCTION
+        )
         
-        # 3. ASK GEMINI
-        final_prompt = SYSTEM_PROMPT.replace("{user_context}", real_context)
+        # Use the logic tree prompt from frontend if available
+        final_prompt = message if message else "Analyze this image kindly."
         
         response = model.generate_content([final_prompt, image])
         return {"reply": response.text}
 
     except Exception as e:
-        print(f"Analysis Error: {e}")
-        # Check for Quota Limit
-        if "429" in str(e):
-             return {"reply": "I'm overwhelmed! Please wait a minute. 🐼"}
-        return {"reply": "My panda eyes are blurry... I couldn't read that."}
+        return {"reply": "I couldn't quite see that. Try again? 🐼"}
 
-# --- NEW ENDPOINT: SAVE PROFILE ---
 @app.post("/save_profile")
 async def save_profile(data: dict):
-    if not supabase:
-        return {"status": "error", "message": "Database not connected"}
-
-    user_id = data.get("user_id")
-    medical_context = data.get("medical_context")
-    
+    if not supabase: return {"status": "error"}
     try:
-        # Save to Supabase (Upsert)
-        data = {"device_id": user_id, "medical_data": medical_context}
-        supabase.table("user_profiles").upsert(data).execute()
+        supabase.table("user_profiles").upsert({
+            "device_id": data.get("user_id"), 
+            "medical_data": data.get("medical_context")
+        }).execute()
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
