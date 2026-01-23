@@ -53,34 +53,46 @@ async def root():
     return {"message": "Dr. Paws is ready!"}
 
 @app.post("/chat")
+@app.post("/chat")
 async def chat_endpoint(data: dict):
     user_message = data.get("user_message", "")
     history = data.get("history", [])
-    
-    # Get User Context (Name/Health) from Frontend
     user_details = data.get("user_details", "User: Guest") 
 
-    # 1. Setup Model with System Instruction
-    # We inject the Persona AND the User's specific details here
+    # 1. Setup System Prompt
     system_prompt = f"{DR_PAWS_INSTRUCTION}\n\nCONTEXT:\n{user_details}"
     
-    model = genai.GenerativeModel(
-        'models/gemini-1.5-flash',
-        system_instruction=system_prompt
-    )
-
-    # 2. Build History
-    gemini_history = []
-    for msg in history:
-        role = "user" if msg.get("role") == "user" else "model"
-        gemini_history.append({"role": role, "parts": [msg.get("content", "")]})
-
     try:
+        # Initialize Model
+        model = genai.GenerativeModel(
+            'models/gemini-1.5-flash',
+            system_instruction=system_prompt
+        )
+
+        # 2. Build History
+        gemini_history = []
+        for msg in history:
+            # Protect against empty content which crashes Gemini
+            content = msg.get("content", "").strip()
+            if content: 
+                role = "user" if msg.get("role") == "user" else "model"
+                gemini_history.append({"role": role, "parts": [content]})
+
+        # 3. Start Chat
         chat = model.start_chat(history=gemini_history)
         response = chat.send_message(user_message)
         return {"reply": response.text}
+
     except Exception as e:
-        return {"reply": "I'm feeling a bit fuzzy. Can you say that again? 🐼"}
+        # --- DEBUGGING: PRINT THE ERROR TO CONSOLE ---
+        print(f"❌ CHAT ERROR: {str(e)}")
+        # Check for specific known errors
+        if "system_instruction" in str(e):
+             return {"reply": "My brain is outdated! Please update 'google-generativeai' in requirements.txt. 🐼"}
+        if "API_KEY" in str(e):
+             return {"reply": "I lost my API key! Check Render Environment Variables. 🐼"}
+             
+        return {"reply": f"I'm feeling a bit fuzzy. (Error: {str(e)}) 🐼"}
 
 @app.post("/analyze")
 async def analyze_image(
