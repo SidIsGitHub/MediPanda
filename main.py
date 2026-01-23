@@ -48,7 +48,7 @@ CORE RULES:
 # --- 3. MODEL SELECTOR (The Fix) ---
 def get_model(system_prompt):
     # Try the latest alias first
-    model_name = 'models/gemini-1.5-flash-latest' 
+    model_name = 'models/gemini-2.5-flash' 
     return genai.GenerativeModel(model_name, system_instruction=system_prompt)
 
 # --- 4. ENDPOINTS ---
